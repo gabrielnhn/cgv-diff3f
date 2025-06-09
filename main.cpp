@@ -149,6 +149,7 @@ void processInput(GLFWwindow *window)
 
 int main()
 {
+    GLenum err;
 
     const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
     
@@ -181,21 +182,6 @@ int main()
     glm::vec4 obj = model * glm::vec4(off_model.vertices[0], 1.0f);
     std::cout << "fitted v0: "
           << obj.x << ", " << obj.y << ", " << obj.z << '\n';
-
-
-
-    // return 0;
-
-    // std::vector<float> vertices; // Create a vector of glm::vec4
-
-    // // Convert the column-major data into row-major
-    // for (size_t i = 0; i < shape[0]; ++i) {
-    //     for (size_t j = 0; j < shape[1]; ++j) {
-    //         size_t index = j * shape[0] + i;  // Convert column-major index
-    //         vertices.push_back(data[index]); // Convert to vec4
-    //     }
-    // }
-
 
 
     glfwInit();
@@ -257,12 +243,14 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     glEnableVertexAttribArray(0);  
 
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error before shader definition" << err << std::endl;
+    }
     
     const char *vertexShaderSourceGLSLCode =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vertexPosition; // Expecting vec4 for each vertex\n"
         "uniform mat4 mvp;  // Model-View-Projection matrix\n"
-        // "out float vertexColor;  // Output color to fragment shader\n"
         "out float vertexShade;  // Output color to fragment shader\n"
         "void main()\n"
         "{\n"
@@ -311,23 +299,22 @@ int main()
     glAttachShader(shaderProgram, fragShader);
 
     glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
-    glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &success);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
     }
-    //
+    glUseProgram(shaderProgram);
     glEnable(GL_PROGRAM_POINT_SIZE);
+
 
 
     int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
+    // glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
     // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size()/3);
-    glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size());
-
+    // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size());
 
     glEnable(GL_DEPTH_TEST);
 
@@ -344,8 +331,6 @@ int main()
             once +=1;
         }
 
-
-        GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << std::endl;
         }
