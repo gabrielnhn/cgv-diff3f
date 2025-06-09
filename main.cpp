@@ -17,10 +17,13 @@
 
 float fov = glm::radians(45.0f);
 float farDistance=12.0f;
-float nearDistance=0.01f;
+float nearDistance=0.0001f;
 
-auto camera = glm::vec3(-0.5, -0.5, 1);
-auto aim = glm::vec3(-0.5, -0.5, 0);
+// auto camera = glm::vec3(-0.5, -0.5, 1);
+// auto aim = glm::vec3(-0.5, -0.5, 0);
+
+auto camera = glm::vec3(0.0, 0.0, 2.0);
+auto aim = glm::vec3(0.0, 0.0, 0.0);
 
 double mousex, mousey;
 double mousex_last, mousey_last;
@@ -269,6 +272,7 @@ int main()
 
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
 
     int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
