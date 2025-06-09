@@ -10,6 +10,7 @@
 
 // #include "npy.hpp"
 #include "load_off_model.hpp"
+#include "load_shader.hpp"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -138,7 +139,8 @@ int main()
 {
     GLenum err;
 
-    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
+    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
+    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
     
     std::cout << "READING: " << path << std::endl;
     
@@ -230,31 +232,34 @@ int main()
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
     }
     
-    const char *vertexShaderSourceGLSLCode =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vertexPosition; // Expecting vec4 for each vertex\n"
-        "uniform mat4 mvp;  // Model-View-Projection matrix\n"
-        "out float vertexShade;  // Output color to fragment shader\n"
-        "void main()\n"
-        "{\n"
-        "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
-        // "    gl_PointSize = 5.0;\n"
-        "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
-        "}\0";
+    // const char *vertexShaderSourceGLSLCode =
+    //     "#version 330 core\n"
+    //     "layout (location = 0) in vec3 vertexPosition; // Expecting vec4 for each vertex\n"
+    //     "uniform mat4 mvp;  // Model-View-Projection matrix\n"
+    //     "out float vertexShade;  // Output color to fragment shader\n"
+    //     "void main()\n"
+    //     "{\n"
+    //     "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
+    //     // "    gl_PointSize = 5.0;\n"
+    //     "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
+    //     "}\0";
 
     
-    const char *fragShaderSourceGLSLCode = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "in float vertexShade;\n"
-        "void main()\n"
-        "{\n"
-            "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-        "}\0";
+    // const char *fragShaderSourceGLSLCode = "#version 330 core\n"
+    //     "out vec4 FragColor;\n"
+    //     "in float vertexShade;\n"
+    //     "void main()\n"
+    //     "{\n"
+    //         "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+    //     "}\0";
     
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
+    // glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
+    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
     glCompileShader(vertexShader);
     //
     int success;
@@ -267,7 +272,8 @@ int main()
     //
     unsigned int fragShader;
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
+    // glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
+    glShaderSource(fragShader, 1, &fragShaderSource.text, NULL);
     glCompileShader(fragShader);
     //
     glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
