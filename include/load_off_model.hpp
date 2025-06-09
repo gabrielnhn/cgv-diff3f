@@ -42,8 +42,8 @@ class OffModel {
 			std::cout << "Warning: n_edges is not zero" << std::endl;
 
 
-		vertices.reserve(n_vertices);
-		faces.reserve(n_faces);
+		// vertices.reserve(n_vertices);
+		// faces.reserve(n_faces);
 
 		// all vertices
 		float x,y,z;
@@ -52,7 +52,8 @@ class OffModel {
 			std::getline(myfile,line);
 			std::stringstream ss(line);
 			ss >> x >> y >> z;
-			vertices[index] = glm::vec3(x,y,z);
+			// vertices[index] = glm::vec3(x,y,z);
+			vertices.push_back(glm::vec3(x,y,z));
 		}
 
 		// all faces
@@ -64,7 +65,8 @@ class OffModel {
 			ss >> three >> i >> j >> k;
 			if (three != 3)
 				std::cout << "Warning: face has more than 3 vertices?" << std::endl;
-			faces[index] = glm::ivec3(i,j,k);
+			// faces[index] = glm::ivec3(i,j,k);
+			faces.push_back(glm::ivec3(i,j,k));
 		}
 
 		// provide statistics

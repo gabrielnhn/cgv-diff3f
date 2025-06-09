@@ -15,15 +15,23 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-float fov = glm::radians(45.0f);
-float farDistance=12.0f;
-float nearDistance=0.0001f;
+// // float fov = glm::radians(45.0f);
+// float fov = glm::radians(70.0f);
+// float farDistance=52.0f;
+// float nearDistance=0.0001f;
 
-// auto camera = glm::vec3(-0.5, -0.5, 1);
-// auto aim = glm::vec3(-0.5, -0.5, 0);
+// // auto camera = glm::vec3(-0.5, -0.5, 1);
+// // auto aim = glm::vec3(-0.5, -0.5, 0);
 
-auto camera = glm::vec3(0.0, 0.0, 2.0);
-auto aim = glm::vec3(0.0, 0.0, 0.0);
+// // auto camera = glm::vec3(0.0, 0.0, 2.0);
+// auto camera = glm::vec3(0.0, 0.0, 10.0);
+
+// auto aim = glm::vec3(0.0, 0.0, 0.0);
+auto camera = glm::vec3(0.0f, 0.0f, 3.0f);   // three units back
+auto aim    = glm::vec3(0.0f);              // look at the origin
+auto nearDistance = 0.1f;
+auto farDistance  = 20.0f;
+auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
 double mousex_last, mousey_last;
@@ -149,8 +157,33 @@ int main()
     OffModel off_model(path);
     
     std::cout << "Finished" << std::endl;
+    std::cout << "raw v0: "
+            << off_model.vertices[0].x << ", "
+            << off_model.vertices[0].y << ", "
+            << off_model.vertices[0].z << '\n';
 
-    std::cout << std::endl;
+    glm::vec3 bbMin(  std::numeric_limits<float>::max());
+    glm::vec3 bbMax( -std::numeric_limits<float>::max());
+
+    for (auto &v : off_model.vertices) {
+        bbMin = glm::min(bbMin, v);
+        bbMax = glm::max(bbMax, v);
+    }
+    glm::vec3 centre = 0.5f * (bbMin + bbMax);
+    float     diag   = glm::length(bbMax - bbMin);   // ≈ “size” of the model
+
+    // --- build a model matrix that recentres & rescales -------------------------
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, -centre);          // move centre → origin
+    model = glm::scale(model, glm::vec3(2.0f / diag)); // make it fit a 2×2×2 cube
+
+
+    glm::vec4 obj = model * glm::vec4(off_model.vertices[0], 1.0f);
+    std::cout << "fitted v0: "
+          << obj.x << ", " << obj.y << ", " << obj.z << '\n';
+
+
+
     // return 0;
 
     // std::vector<float> vertices; // Create a vector of glm::vec4
@@ -194,7 +227,7 @@ int main()
     glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
     // view = flipZ* view;
 
-    glm::mat4 model = glm::mat4(1.0f);
+    // glm::mat4 model = glm::mat4(1.0f);
     mvp = projection * view * model;
 
     unsigned int VBO;
@@ -217,7 +250,8 @@ int main()
     // // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(glm::vec4), &vertices.front(), GL_DYNAMIC_DRAW);
     // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), &vertices.front(), GL_DYNAMIC_DRAW);
     // glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(float), &off_model.vertices.front(), GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_DYNAMIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_STATIC_DRAW);
 
     // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float)*4, (void*)0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
@@ -232,26 +266,18 @@ int main()
         "out float vertexShade;  // Output color to fragment shader\n"
         "void main()\n"
         "{\n"
-        // "    vertexColor = vertexPosition.w;\n"  // Pass the position directly to the fragment shader for color"
         "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
+        "    gl_PointSize = 5.0;\n"
         "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
         "}\0";
 
     
     const char *fragShaderSourceGLSLCode = "#version 330 core\n"
         "out vec4 FragColor;\n"
-        // "in float vertexColor;\n"
         "in float vertexShade;\n"
         "void main()\n"
         "{\n"
-            // "if(vertexColor > 0.6)\n"
-            "if(vertexShade > 0.6)\n"
-            "FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
-            // "else{if(vertexColor > 0.4)\n"
-            "else{if(vertexShade > 0.4)\n"
-            "FragColor = vec4(0.0, 0.0, 1.0, 1.0);\n"
-            "else\n"
-            "FragColor = vec4(1.0, 0.0, 0.0, 1.0);}\n"
+            "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
     
 
@@ -260,10 +286,24 @@ int main()
     glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
     glCompileShader(vertexShader);
     //
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
     unsigned int fragShader;
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
     glCompileShader(fragShader);
+    //
+    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
     //
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
@@ -272,6 +312,12 @@ int main()
 
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
+    glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
     glEnable(GL_PROGRAM_POINT_SIZE);
 
 
@@ -287,8 +333,17 @@ int main()
 
     // glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
     glClearColor(1.0f,1.0f,1.0f,1.0f);
+    int once = 0;
     while(!glfwWindowShouldClose(window))
     {
+        if (not once)
+        {
+            glm::vec4 clip = projection * view * obj;
+            glm::vec3 ndc  = glm::vec3(clip) / clip.w;
+            std::cout << "NDC v0: " << ndc.x << ", " << ndc.y << ", " << ndc.z << '\n';
+            once +=1;
+        }
+
 
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
@@ -308,13 +363,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        // glDrawArrays(GL_POINTS, 0, vertices.size());  // Each vertex is 1 float
-        // glPointSize(1.0f); // Set point size to 10 pixels
         glPointSize(30.0f); // Set point size to 10 pixels
-        // glDrawArrays(GL_POINTS, 0, vertices.size()/4);  // Each vertex is 1 float
-        // glDrawArrays(GL_POINTS, 0, off_model.vertices.size());  // Each vertex is 1 float
+        glBindVertexArray(VAO);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(off_model.vertices.size()));
 
         glfwSwapBuffers(window);
