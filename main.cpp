@@ -15,22 +15,10 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-// // float fov = glm::radians(45.0f);
-// float fov = glm::radians(70.0f);
-// float farDistance=52.0f;
-// float nearDistance=0.0001f;
-
-// // auto camera = glm::vec3(-0.5, -0.5, 1);
-// // auto aim = glm::vec3(-0.5, -0.5, 0);
-
-// // auto camera = glm::vec3(0.0, 0.0, 2.0);
-// auto camera = glm::vec3(0.0, 0.0, 10.0);
-
-// auto aim = glm::vec3(0.0, 0.0, 0.0);
-auto camera = glm::vec3(0.0f, 0.0f, 3.0f);   // three units back
-auto aim    = glm::vec3(0.0f);              // look at the origin
+auto camera = glm::vec3(0.0f, 0.0f, 3.0f);
+auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-auto farDistance  = 20.0f;
+auto farDistance = 20.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
@@ -40,9 +28,9 @@ int last_mouse_event = GLFW_RELEASE;
 double height = 800;
 double width = 800;
 
-// 346x260
-float ds_width = 346;
-float ds_height = 260;
+// // 346x260
+// float ds_width = 346;
+// float ds_height = 260;
 
 float speed = 0.02f;
 
@@ -53,13 +41,12 @@ glm::mat4 mvp;
 
 float aspect_ratio = width/height;
 
-
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     width = w;
     height = h;
     glViewport(0, 0, width, height);
-    std::cout << "CHANGED WINDOW SIZE";
+    // std::cout << "CHANGED WINDOW SIZE";
     std::cout << aspect_ratio << std::endl;
     aspect_ratio = width/height;
     std::cout << aspect_ratio << std::endl;
@@ -223,25 +210,21 @@ int main()
     glGenVertexArrays(1, &VAO);  
     glBindVertexArray(VAO);
 
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
 
+    // VBO FOR VERTICES
     glBindBuffer(GL_ARRAY_BUFFER, VBO);  
-
-    //  // Normalize vertex data to fit within [-1, 1] range
-    //  for (size_t i = 0; i < vertices.size(); i += 4) {
-    //     vertices[i] /= -ds_width;     // Scale x
-    //     vertices[i + 1] /= -ds_height; // Scale y
-    //     vertices[i + 2] /= -500000.0f; // Scale z
-    // }
-
-    // // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(glm::vec4), &vertices.front(), GL_DYNAMIC_DRAW);
-    // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), &vertices.front(), GL_DYNAMIC_DRAW);
-    // glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(float), &off_model.vertices.front(), GL_DYNAMIC_DRAW);
-    // glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_DYNAMIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_STATIC_DRAW);
 
     // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float)*4, (void*)0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     glEnableVertexAttribArray(0);  
+
+    // EBO FOR FACES
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, off_model.faces.size()*sizeof(glm::ivec3), &off_model.faces[0], GL_STATIC_DRAW); 
+
 
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
@@ -255,7 +238,7 @@ int main()
         "void main()\n"
         "{\n"
         "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
-        "    gl_PointSize = 5.0;\n"
+        // "    gl_PointSize = 5.0;\n"
         "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
         "}\0";
 
@@ -317,19 +300,21 @@ int main()
     // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size());
 
     glEnable(GL_DEPTH_TEST);
+    // glDisable(GL_CULL_FACE);
+    // glFrontFace(GL_CCW); // Changes default to Clockwise
 
     // glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
     glClearColor(1.0f,1.0f,1.0f,1.0f);
-    int once = 0;
+    // int once = 0;
     while(!glfwWindowShouldClose(window))
     {
-        if (not once)
-        {
-            glm::vec4 clip = projection * view * obj;
-            glm::vec3 ndc  = glm::vec3(clip) / clip.w;
-            std::cout << "NDC v0: " << ndc.x << ", " << ndc.y << ", " << ndc.z << '\n';
-            once +=1;
-        }
+        // if (not once)
+        // {
+        //     glm::vec4 clip = projection * view * obj;
+        //     glm::vec3 ndc  = glm::vec3(clip) / clip.w;
+        //     std::cout << "NDC v0: " << ndc.x << ", " << ndc.y << ", " << ndc.z << '\n';
+        //     once +=1;
+        // }
 
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << std::endl;
@@ -348,9 +333,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-        glPointSize(30.0f); // Set point size to 10 pixels
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(off_model.vertices.size()));
+        // FOR POINT CLOUD
+        // glPointSize(10.0f); // Set point size to 10 pixels
+        // glBindVertexArray(VAO);
+        // glDrawArrays(GL_POINTS, 0, off_model.vertices.size());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, off_model.faces.size()*3, GL_UNSIGNED_INT, 0);
+
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();    
