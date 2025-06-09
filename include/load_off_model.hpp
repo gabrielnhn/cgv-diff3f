@@ -57,15 +57,29 @@ class OffModel {
 
 		// all faces
 		int i, j, k, three;
-		for(int index = 0; index < n_vertices; index++)
+		for(int index = 0; index < n_faces; index++)
 		{
 			std::getline(myfile,line);
 			std::stringstream ss(line);
 			ss >> three >> i >> j >> k;
 			if (three != 3)
 				std::cout << "Warning: face has more than 3 vertices?" << std::endl;
-			vertices[index] = glm::ivec3(x,y,z);
+			faces[index] = glm::ivec3(i,j,k);
 		}
+
+		// provide statistics
+		// #pragma omp parallel for
+		auto min = vertices[0];
+		auto max = vertices[0];
+		for(int index = 1; index < n_vertices; index++)
+		{
+			min = glm::min(min, vertices[index]);
+			max = glm::max(max, vertices[index]);
+		}
+		
+		std::cout << "Max vertex is " << max.x << " " << max.y << " " << max.z << " " << std::endl;
+		std::cout << "Min vertex is " << min.x << " " << min.y << " " << min.z << " " << std::endl;
+
 
 		myfile.close();
 	};

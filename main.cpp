@@ -16,10 +16,8 @@
 #endif
 
 float fov = glm::radians(45.0f);
-float farDistance=50.0f;
-// float farDistance=1.2f;
-// float farDistance=0.5f;
-float nearDistance=0.1f;
+float farDistance=12.0f;
+float nearDistance=0.01f;
 
 auto camera = glm::vec3(-0.5, -0.5, 1);
 auto aim = glm::vec3(-0.5, -0.5, 0);
@@ -145,14 +143,12 @@ int main()
     
     std::cout << "READING: " << path << std::endl;
     
-    OffModel model(path);
+    OffModel off_model(path);
     
-    // std::vector<float> data = d.data;
-    // std::vector<unsigned long> shape = d.shape;
     std::cout << "Finished" << std::endl;
 
     std::cout << std::endl;
-    return 0;
+    // return 0;
 
     // std::vector<float> vertices; // Create a vector of glm::vec4
 
@@ -166,47 +162,47 @@ int main()
 
 
 
-    // glfwInit();
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   
-    // GLFWwindow* window = glfwCreateWindow(width, height, "Diff3F Experiments", NULL, NULL);
-    // if (window == NULL)
-    // {
-    //     std::cout << "Failed to create GLFW window..." << std::endl;
-    //     glfwTerminate();
-    //     return -1;
-    // }
-    // glfwMakeContextCurrent(window);
+    GLFWwindow* window = glfwCreateWindow(width, height, "Diff3F Experiments", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window..." << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
 
-    // if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    // {
-    //     std::cout << "Failed to initialize GLAD" << std::endl;
-    //     return -1;
-    // }   
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }   
 
-    // glViewport(0, 0, width, height);
-    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glViewport(0, 0, width, height);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // aspect_ratio = width/height;
-    // glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
+    aspect_ratio = width/height;
+    glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
 
-    // glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-    // // view = flipZ* view;
+    glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
+    // view = flipZ* view;
 
-    // glm::mat4 model = glm::mat4(1.0f);
-    // mvp = projection * view * model;
+    glm::mat4 model = glm::mat4(1.0f);
+    mvp = projection * view * model;
 
-    // unsigned int VBO;
-    // glGenBuffers(1, &VBO);
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
 
-    // unsigned int VAO;
-    // glGenVertexArrays(1, &VAO);  
-    // glBindVertexArray(VAO);
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);  
+    glBindVertexArray(VAO);
 
 
-    // glBindBuffer(GL_ARRAY_BUFFER, VBO);  
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);  
 
     //  // Normalize vertex data to fit within [-1, 1] range
     //  for (size_t i = 0; i < vertices.size(); i += 4) {
@@ -217,102 +213,112 @@ int main()
 
     // // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(glm::vec4), &vertices.front(), GL_DYNAMIC_DRAW);
     // glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), &vertices.front(), GL_DYNAMIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(float), &off_model.vertices.front(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_DYNAMIC_DRAW);
 
     // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float)*4, (void*)0);
-    // glEnableVertexAttribArray(0);  
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+    glEnableVertexAttribArray(0);  
 
     
-    // const char *vertexShaderSourceGLSLCode =
-    //     "#version 330 core\n"
-    //     "layout (location = 0) in vec4 vertexPosition; // Expecting vec4 for each vertex\n"
-    //     "uniform mat4 mvp;  // Model-View-Projection matrix\n"
-    //     "out float vertexColor;  // Output color to fragment shader\n"
-    //     "void main()\n"
-    //     "{\n"
-    //     "    vertexColor = vertexPosition.w;\n"  // Pass the position directly to the fragment shader for color"
-    //     "    gl_Position = mvp * vec4(vertexPosition.xyz, 1.0);\n"  // Apply MVP transformation"
-    //     // "    gl_Position = mvp * vec4(vertexPosition.y, vertexPosition.x,z, 1.0);\n"  // Apply MVP transformation"
-    //     "}\0";
+    const char *vertexShaderSourceGLSLCode =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vertexPosition; // Expecting vec4 for each vertex\n"
+        "uniform mat4 mvp;  // Model-View-Projection matrix\n"
+        // "out float vertexColor;  // Output color to fragment shader\n"
+        "out float vertexShade;  // Output color to fragment shader\n"
+        "void main()\n"
+        "{\n"
+        // "    vertexColor = vertexPosition.w;\n"  // Pass the position directly to the fragment shader for color"
+        "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
+        "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
+        "}\0";
 
     
-    // const char *fragShaderSourceGLSLCode = "#version 330 core\n"
-    //     "out vec4 FragColor;\n"
-    //     "in float vertexColor;\n"
-    //     "void main()\n"
-    //     "{\n"
-    //         "if(vertexColor > 0.6)\n"
-    //         "FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
-    //         "else{if(vertexColor > 0.4)\n"
-    //         "FragColor = vec4(0.0, 0.0, 1.0, 1.0);\n"
-    //         "else\n"
-    //         "FragColor = vec4(1.0, 0.0, 0.0, 1.0);}\n"
-    //     "}\0";
+    const char *fragShaderSourceGLSLCode = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        // "in float vertexColor;\n"
+        "in float vertexShade;\n"
+        "void main()\n"
+        "{\n"
+            // "if(vertexColor > 0.6)\n"
+            "if(vertexShade > 0.6)\n"
+            "FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
+            // "else{if(vertexColor > 0.4)\n"
+            "else{if(vertexShade > 0.4)\n"
+            "FragColor = vec4(0.0, 0.0, 1.0, 1.0);\n"
+            "else\n"
+            "FragColor = vec4(1.0, 0.0, 0.0, 1.0);}\n"
+        "}\0";
     
 
-    // unsigned int vertexShader;
-    // vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    // glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
-    // glCompileShader(vertexShader);
-    // //
-    // unsigned int fragShader;
-    // fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    // glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
-    // glCompileShader(fragShader);
-    // //
-    // unsigned int shaderProgram;
-    // shaderProgram = glCreateProgram();
-    // glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, fragShader);
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
+    glCompileShader(vertexShader);
+    //
+    unsigned int fragShader;
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
+    glCompileShader(fragShader);
+    //
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragShader);
 
-    // glLinkProgram(shaderProgram);
-    // glUseProgram(shaderProgram);
-
-
-    // int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-    // glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-
-    // glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), vertices.size());
-    // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), vertices.size()/4);
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
 
 
-    // glEnable(GL_DEPTH_TEST);
+    int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
+    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    // // glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
-    // glClearColor(1.0f,1.0f,1.0f,1.0f);
-    // while(!glfwWindowShouldClose(window))
-    // {
-
-    //     GLenum err;
-    //     while ((err = glGetError()) != GL_NO_ERROR) {
-    //         std::cerr << "OpenGL error: " << err << std::endl;
-    //     }
-
-    //     // remake projection
-    //     glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
-    //     view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-    //     mvp = projection * view * model;
-    //     int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-    //     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+    glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
+    // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size()/3);
+    glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size());
 
 
-    //     processInput(window);
+    glEnable(GL_DEPTH_TEST);
 
-    //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
+    glClearColor(1.0f,1.0f,1.0f,1.0f);
+    while(!glfwWindowShouldClose(window))
+    {
 
-    //     glUseProgram(shaderProgram);
-    //     // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    //     // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    //     // glDrawArrays(GL_POINTS, 0, vertices.size());  // Each vertex is 1 float
-    //     glPointSize(1.0f); // Set point size to 10 pixels
-    //     // glPointSize(3.0f); // Set point size to 10 pixels
-    //     glDrawArrays(GL_POINTS, 0, vertices.size()/4);  // Each vertex is 1 float
+        GLenum err;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error: " << err << std::endl;
+        }
 
-    //     glfwSwapBuffers(window);
-    //     glfwPollEvents();    
-    // }
+        // remake projection
+        glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
+        view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
+        mvp = projection * view * model;
+        int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
+        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    // glDeleteShader(vertexShader);
-    // glDeleteShader(fragShader); 
 
-    // return 0;
+        processInput(window);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_POINTS, 0, vertices.size());  // Each vertex is 1 float
+        // glPointSize(1.0f); // Set point size to 10 pixels
+        glPointSize(30.0f); // Set point size to 10 pixels
+        // glDrawArrays(GL_POINTS, 0, vertices.size()/4);  // Each vertex is 1 float
+        // glDrawArrays(GL_POINTS, 0, off_model.vertices.size());  // Each vertex is 1 float
+        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(off_model.vertices.size()));
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();    
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragShader); 
+
+    return 0;
 }
