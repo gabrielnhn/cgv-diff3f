@@ -16,10 +16,10 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-auto camera = glm::vec3(0.0f, 0.0f, 3.0f);
+auto camera = glm::vec3(0.0f, 0.0f, 2.0f);
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-auto farDistance = 20.0f;
+auto farDistance = 5.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
@@ -39,6 +39,7 @@ float speed = 0.02f;
 static float yaw = -90.0f; 
 static float pitch = 0.0f;
 glm::mat4 mvp;
+glm::mat4 mv;
 
 float aspect_ratio = width/height;
 
@@ -61,7 +62,6 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
     
     glm::vec3 forward = glm::normalize(aim - camera);
-    // glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0, 1, 0),forward)); // Right vector
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0))); // Right vector
 
 
@@ -140,17 +140,12 @@ int main()
     GLenum err;
 
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
-    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
+    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
+    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
     
     std::cout << "READING: " << path << std::endl;
     
     OffModel off_model(path);
-    
-    std::cout << "Finished" << std::endl;
-    std::cout << "raw v0: "
-            << off_model.vertices[0].x << ", "
-            << off_model.vertices[0].y << ", "
-            << off_model.vertices[0].z << '\n';
 
     glm::vec3 bbMin(  std::numeric_limits<float>::max());
     glm::vec3 bbMax( -std::numeric_limits<float>::max());
@@ -160,12 +155,12 @@ int main()
         bbMax = glm::max(bbMax, v);
     }
     glm::vec3 centre = 0.5f * (bbMin + bbMax);
-    float     diag   = glm::length(bbMax - bbMin);   // ≈ “size” of the model
+    float diag = glm::length(bbMax - bbMin);
 
     // --- build a model matrix that recentres & rescales -------------------------
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, -centre);          // move centre → origin
-    model = glm::scale(model, glm::vec3(2.0f / diag)); // make it fit a 2×2×2 cube
+    model = glm::translate(model, -centre); 
+    model = glm::scale(model, glm::vec3(2.0f / diag));
 
 
     glm::vec4 obj = model * glm::vec4(off_model.vertices[0], 1.0f);
@@ -200,10 +195,8 @@ int main()
     glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
 
     glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-    // view = flipZ* view;
-
-    // glm::mat4 model = glm::mat4(1.0f);
     mvp = projection * view * model;
+    mv = view * model;
 
     unsigned int VBO;
     glGenBuffers(1, &VBO);
@@ -299,9 +292,12 @@ int main()
     glEnable(GL_PROGRAM_POINT_SIZE);
 
 
-
     int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+    int mvLocation = glGetUniformLocation(shaderProgram, "mv");
+    glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
+    int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
+    glUniform1f(farLocation, farDistance);
 
     // glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
     // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size()/3);
@@ -313,27 +309,24 @@ int main()
 
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
     glClearColor(0.0f,0.0f,0.0f,0.0f);
-    // int once = 0;
     while(!glfwWindowShouldClose(window))
     {
-        // if (not once)
-        // {
-        //     glm::vec4 clip = projection * view * obj;
-        //     glm::vec3 ndc  = glm::vec3(clip) / clip.w;
-        //     std::cout << "NDC v0: " << ndc.x << ", " << ndc.y << ", " << ndc.z << '\n';
-        //     once +=1;
-        // }
-
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << std::endl;
+            return 1;
         }
 
         // remake projection
         glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
         view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
         mvp = projection * view * model;
+        mv = view * model;
+
+
         int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+        int mvLocation = glGetUniformLocation(shaderProgram, "mv");
+        glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
 
 
         processInput(window);
@@ -341,15 +334,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+     
         // FOR POINT CLOUD
         // glPointSize(10.0f); // Set point size to 10 pixels
         // glBindVertexArray(VAO);
         // glDrawArrays(GL_POINTS, 0, off_model.vertices.size());
 
+        // FOR SURFACES
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, off_model.faces.size()*3, GL_UNSIGNED_INT, 0);
-
-
 
         glfwSwapBuffers(window);
         glfwPollEvents();    
