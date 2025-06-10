@@ -46,7 +46,9 @@ float aspect_ratio = width/height;
 // image saving stuff
 bool should_save_next_frame = false;
 
-
+unsigned int DepthShaderProgram;
+unsigned int PHONGShaderProgram;
+unsigned int currentRenderProgram = 0;
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
@@ -105,6 +107,14 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
     {
         should_save_next_frame = true;
+    }
+    if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    {
+        currentRenderProgram = PHONGShaderProgram;
+    }
+    if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+    {
+        currentRenderProgram = DepthShaderProgram;
     }
 
     //mouse
@@ -220,65 +230,107 @@ int main()
     aspect_ratio = width/height;
     
     // PREPARE SHADERS
-
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
     }
     
-    // VERTEX OPTIONS
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    
-    // GEOM OPTIONS
-    auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
-    
-    // FRAG OPTIONS
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
-
     int success;
     char infoLog[512];
+    // PREPARE DEPTH SHADER
 
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
-    glCompileShader(vertexShader);
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    // VERTEX OPTIONS
+    auto DepthVertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    // FRAG OPTIONS
+    auto DepthFragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+
+    unsigned int DepthVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(DepthVertexShader, 1, &DepthVertexShaderSource.text, NULL);
+    glCompileShader(DepthVertexShader);
+    glGetShaderiv(DepthVertexShader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(DepthVertexShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
-    //
-    unsigned int geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    glShaderSource(geometryShader, 1, &geometryShaderSource.text, NULL);
-    glCompileShader(geometryShader);
-    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    unsigned int DepthFragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(DepthFragShader, 1, &DepthFragShaderSource.text, NULL);
+    glCompileShader(DepthFragShader);
+    glGetShaderiv(DepthFragShader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    //
-    unsigned int fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &fragShaderSource.text, NULL);
-    glCompileShader(fragShader);
-    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(DepthFragShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, geometryShader);
-    glAttachShader(shaderProgram, fragShader);
+    DepthShaderProgram = glCreateProgram();
+    glAttachShader(DepthShaderProgram, DepthVertexShader);
+    glAttachShader(DepthShaderProgram, DepthFragShader);
 
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    glLinkProgram(DepthShaderProgram);
+    glGetProgramiv(DepthShaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(DepthShaderProgram, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
     }
-    glUseProgram(shaderProgram);
+    glUseProgram(DepthShaderProgram);
     glEnable(GL_PROGRAM_POINT_SIZE);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after depth shader: " << std::endl;
+        return 1;
+    }
+
+
+    // PREPARE PHONG SHADER
+    auto PHONGVertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    auto PHONGGeometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
+    auto PHONGFragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+   
+    unsigned int PHONGVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(PHONGVertexShader, 1, &PHONGVertexShaderSource.text, NULL);
+    glCompileShader(PHONGVertexShader);
+    glGetShaderiv(PHONGVertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(PHONGVertexShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int PHONGGeometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(PHONGGeometryShader, 1, &PHONGGeometryShaderSource.text, NULL);
+    glCompileShader(PHONGGeometryShader);
+    glGetShaderiv(PHONGGeometryShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(PHONGGeometryShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int PHONGFragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(PHONGFragShader, 1, &PHONGFragShaderSource.text, NULL);
+    glCompileShader(PHONGFragShader);
+    glGetShaderiv(PHONGFragShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(PHONGFragShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int PHONGShaderProgram = glCreateProgram();
+    glAttachShader(PHONGShaderProgram, PHONGVertexShader);
+    glAttachShader(PHONGShaderProgram, PHONGGeometryShader);
+    glAttachShader(PHONGShaderProgram, PHONGFragShader);
+
+    glLinkProgram(PHONGShaderProgram);
+    glGetProgramiv(PHONGShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(PHONGShaderProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
+    }
+    glUseProgram(PHONGShaderProgram);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after PHONG shader: " << std::endl;
+        return 1;
+    }
+
+    currentRenderProgram = PHONGShaderProgram;
 
     // load model data
 
@@ -317,11 +369,16 @@ int main()
     // set persistent shader uniforms
     auto ambient_light = glm::vec3(0.3f, 0.3f, 0.3f);
 
-    int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
-    glUniform1f(farLocation, farDistance);
-    glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
-    // glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
-    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+    glUseProgram(DepthShaderProgram);
+    glUniform1f(glGetUniformLocation(DepthShaderProgram, "farPlaneDistance"), farDistance);
+    // glUniform3f(glGetUniformLocation(DepthShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+    // glUniform3f(glGetUniformLocation(DepthShaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+
+    glUseProgram(PHONGShaderProgram);
+    // glUniform1f(glGetUniformLocation(PHONGShaderProgram, "farPlaneDistance"), farDistance);
+    // glUniform3f(glGetUniformLocation(PHONGShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+    glUniform3f(glGetUniformLocation(PHONGShaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+   
 
     // buffer model data to gpu
     unsigned int VBO;
@@ -333,6 +390,11 @@ int main()
 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after VAO defs: " << std::endl;
+        return 1;
+    }
 
     // VBO FOR VERTICES
     glBindBuffer(GL_ARRAY_BUFFER, VBO);  
@@ -352,17 +414,29 @@ int main()
     // glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
     glClearColor(0.0f,0.0f,0.0f,0.0f);
 
+
     int text_loaded = textSetup();
     assert(text_loaded);
+
+     while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error before loops" << std::endl;
+        return 1;
+    }
 
     int loop_count = 0;
     while(!glfwWindowShouldClose(window))
     {
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         processInput(window); // recompute camera position
 
-        glUseProgram(shaderProgram);
+        glUseProgram(0);
+        glUseProgram(currentRenderProgram);
+
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error after useProgram" << std::endl;
+            return 1;
+        }
+
         // remake projection
         projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
         view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
@@ -370,12 +444,28 @@ int main()
         mv = view * model;
 
         // set variable shader uniforms
-        int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-        int mvLocation = glGetUniformLocation(shaderProgram, "mv");
-        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-        glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
-        glUniform3f(glGetUniformLocation(shaderProgram, "light_pos"), camera.x, camera.y, camera.z);
+        glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mvp"), 1, GL_FALSE, glm::value_ptr(mvp));
         
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error " << err << " after uniformmvp" << std::endl;
+            return 1;
+        }
+        if (currentRenderProgram == DepthShaderProgram)
+            glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mv"), 1, GL_FALSE, glm::value_ptr(mv));
+        
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error " << err << " after uniformmv" << std::endl;
+            return 1;
+        }
+
+        glUniform3f(glGetUniformLocation(currentRenderProgram, "light_pos"), camera.x, camera.y, camera.z);
+        
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error " << err << " after uniform light pos" << std::endl;
+            return 1;
+        }
+
+
         glBindVertexArray(VAO);
 
         // FOR POINT CLOUD
@@ -386,6 +476,10 @@ int main()
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
 
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error after drawElements" << std::endl;
+            return 1;
+        }
         
         // render text
         if (not should_save_next_frame)
@@ -393,7 +487,6 @@ int main()
             int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
             assert(text_rendered);
         }
-        
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -406,21 +499,24 @@ int main()
                 window, &off_object);
         }
 
-
-
         loop_count += 1;
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
             return 1;
         }
-
        
     }
 
-    glDeleteShader(vertexShader);
-    glDeleteShader(geometryShader); 
-    glDeleteShader(fragShader); 
-    glDeleteProgram(shaderProgram);
+    glDeleteShader(DepthVertexShader);
+    glDeleteShader(DepthFragShader); 
+    glDeleteProgram(DepthShaderProgram);
+    // glDeleteShader(DepthGeometryShader); 
+
+    glDeleteShader(PHONGVertexShader);
+    glDeleteShader(PHONGFragShader); 
+    glDeleteProgram(PHONGShaderProgram);
+    glDeleteShader(PHONGGeometryShader);
+    
     textFinish();
 
     return 0;

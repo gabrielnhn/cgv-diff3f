@@ -34,6 +34,11 @@ unsigned int textVAO, textVBO;
 
 int textSetup()
 {    
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+    std::cerr << "OpenGL error before textSetup: " << err << std::endl;
+    return 1;
+}
     if (FT_Init_FreeType(&ft))
     {
         std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
@@ -158,7 +163,7 @@ int textSetup()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    GLenum err;
+    
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error still in textSetup: " << err << std::endl;
         return 1;
