@@ -20,7 +20,8 @@ auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-auto farDistance = 20.0f;
+// auto farDistance = 20.0f;
+auto farDistance = 5.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
@@ -151,11 +152,11 @@ int main()
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
     }
     
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
     auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -194,7 +195,7 @@ int main()
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, geometryShader);
+    // glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragShader);
 
     glLinkProgram(shaderProgram);
@@ -239,16 +240,11 @@ int main()
     mvp = projection * view * model;
     mv = view * model;
 
-    // set shader uniforms
-    int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-    int mvLocation = glGetUniformLocation(shaderProgram, "mv");
-    glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
+    // set persistent shader uniforms
     int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
     glUniform1f(farLocation, farDistance);
     glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
     glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
-
 
     // buffer model data to gpu
     unsigned int VBO;
@@ -291,7 +287,7 @@ int main()
         mvp = projection * view * model;
         mv = view * model;
 
-        // reset uniforms
+        // set variable shader uniforms
         int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         int mvLocation = glGetUniformLocation(shaderProgram, "mv");
@@ -303,7 +299,7 @@ int main()
         glUseProgram(shaderProgram);
      
         // FOR POINT CLOUD
-        // glPointSize(10.0f); // Set point size to 10 pixels
+        // glPointSize(10.0f);
         // glBindVertexArray(VAO);
         // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
 
