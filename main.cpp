@@ -59,7 +59,13 @@ void processInput(GLFWwindow *window)
     
     glm::vec3 forward = glm::normalize(aim - camera);
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
-    glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); 
+    glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0)));
+    // up = glm::abs(up);
+
+    // auto forward = glm::vec3(0,0,1);
+    // auto right = glm::vec3(1,0,0);
+    // auto up = glm::vec3(0,1,0);
+
 
     // keyboard
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -107,10 +113,9 @@ void processInput(GLFWwindow *window)
         }
     }
     
-    //clamp with radius=max_distance
-    if (glm::length(camera) > max_distance_to_object) {
+    // clamp with radius=max_distance
+    if (glm::length(camera) > max_distance_to_object)
         camera = glm::normalize(camera) * max_distance_to_object;
-    }
 
 }
 
@@ -152,27 +157,30 @@ int main()
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
     }
     
+    // VERTEX OPTIONS
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    
+    // GEOM OPTIONS
     auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+    
+    // FRAG OPTIONS
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
 
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
-    glCompileShader(vertexShader);
-    //
     int success;
     char infoLog[512];
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
+    glCompileShader(vertexShader);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
-    unsigned int geometryShader;
-    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    unsigned int geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
     glShaderSource(geometryShader, 1, &geometryShaderSource.text, NULL);
     glCompileShader(geometryShader);
     glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
@@ -181,21 +189,18 @@ int main()
         std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
-    unsigned int fragShader;
-    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragShader, 1, &fragShaderSource.text, NULL);
     glCompileShader(fragShader);
-    //
     glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
+    unsigned int shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, geometryShader);
+    glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragShader);
 
     glLinkProgram(shaderProgram);
@@ -211,7 +216,8 @@ int main()
 
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
-    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
+    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
+    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/4.off";
     
     std::cout << "READING: " << path << std::endl;
     
@@ -241,10 +247,13 @@ int main()
     mv = view * model;
 
     // set persistent shader uniforms
+    auto ambient_light = glm::vec3(0.3f, 0.3f, 0.3f);
+
     int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
     glUniform1f(farLocation, farDistance);
     glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
-    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
+    // glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
+    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
 
     // buffer model data to gpu
     unsigned int VBO;
@@ -272,7 +281,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
-    glClearColor(0.0f,0.0f,0.0f,0.0f);
+    glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
+    // glClearColor(0.0f,0.0f,0.0f,0.0f);
     while(!glfwWindowShouldClose(window))
     {
         while ((err = glGetError()) != GL_NO_ERROR) {
