@@ -192,7 +192,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];
-    off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
+    off_object->features[closest_point_index] = glm::vec3(1.0, 1.0, 1.0);
 
     return 1;
 }
@@ -475,8 +475,9 @@ int main()
             should_save_next_frame = false;
             unproject_image(projection, mv, "", "./bruh.png",
                 window, &off_object);
-            glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
-            glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.vertices[0], GL_DYNAMIC_DRAW);
+            //color
+            glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+            glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
             glEnableVertexAttribArray(1);  
         }
