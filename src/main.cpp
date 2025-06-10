@@ -10,6 +10,7 @@
 
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
+#include "save_image.hpp"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -85,6 +86,11 @@ void processInput(GLFWwindow *window)
 
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
         camera = default_camera;
+    
+    if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+    {
+        saveImage("./bruh.png", window);
+    }
 
     //mouse
     glfwGetCursorPos(window, &mousex, &mousey);
