@@ -112,7 +112,7 @@ int textSetup()
         return 0;
     }
 
-    textFragShader = glCreateShader(GL_VERTEX_SHADER);
+    textFragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(textFragShader, 1, &textFragSource.text, NULL);
     glCompileShader(textFragShader);
     glGetShaderiv(textFragShader, GL_COMPILE_STATUS, &success);
@@ -136,9 +136,17 @@ int textSetup()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // TODO replace with width and height later
-    glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
+    double height = 800;
+    double width = 800;
+    // Update text projection matrix
+    glUseProgram(textProgram); // Activate text shader to set its uniform
+    glm::mat4 textProjection = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
     int projectionLocation = glGetUniformLocation(textProgram, "projection");
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
+    glUseProgram(0); // Deactivate text shader
+    // glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 800.0f);
+    // int projectionLocation = glGetUniformLocation(textProgram, "projection");
+    // glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
     glGenVertexArrays(1, &textVAO);
     glGenBuffers(1, &textVBO);
@@ -148,7 +156,14 @@ int textSetup()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);      
+    glBindVertexArray(0);
+
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error still in textSetup: " << err << std::endl;
+        return 1;
+    }
+
     return 1;
 }
 
@@ -158,8 +173,13 @@ void textFinish()
     FT_Done_FreeType(ft);
 }
     
-void RenderText(std::string text, float x, float y, float scale, glm::vec3 color)
+int RenderText(std::string text, float x, float y, float scale, glm::vec3 color)
 {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error before RenderText: " << err << std::endl;
+        return 0;
+    }
     // activate corresponding render state	
     glUseProgram(textProgram);
 
@@ -201,4 +221,10 @@ void RenderText(std::string text, float x, float y, float scale, glm::vec3 color
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after RenderText: " << err << std::endl;
+        return 0;
+    }
+    return 1;
 }

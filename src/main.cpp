@@ -46,10 +46,17 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     width = w;
     height = h;
     glViewport(0, 0, width, height);
-    // std::cout << "CHANGED WINDOW SIZE";
+    std::cout << "CHANGED WINDOW SIZE to w,h" << w << ", " << h << std::endl;
     std::cout << aspect_ratio << std::endl;
     aspect_ratio = width/height;
     std::cout << aspect_ratio << std::endl;
+
+    // Update text projection matrix
+    glUseProgram(textProgram); // Activate text shader to set its uniform
+    glm::mat4 textProjection = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+    int projectionLocation = glGetUniformLocation(textProgram, "projection");
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
+    glUseProgram(0); // Deactivate text shader
 
 }  
 
@@ -298,17 +305,20 @@ int main()
         return 0;
     }
 
+    int loop_count = 0;
     while(!glfwWindowShouldClose(window))
     {
         while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error: " << err << std::endl;
+            std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
+            // std::cerr << "OpenGL error: " << err << std::endl;
             return 1;
         }
         processInput(window); // recompute camera position
 
-        RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glUseProgram(shaderProgram);
         // remake projection
         glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
         view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
@@ -321,22 +331,38 @@ int main()
         int mvLocation = glGetUniformLocation(shaderProgram, "mv");
         glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
         glUniform3f(glGetUniformLocation(shaderProgram, "light_pos"), camera.x, camera.y, camera.z);
+        
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            // std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
+            std::cerr << "OpenGL error after useprogram: " << err << std::endl;
+            return 1;
+        }
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glUseProgram(shaderProgram);
-     
+        glBindVertexArray(VAO);
         // FOR POINT CLOUD
         // glPointSize(10.0f);
-        // glBindVertexArray(VAO);
         // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
 
         // FOR SURFACES
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
 
+        // render text
+        int text_rendered = RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+        if (not text_rendered)
+        {
+            std::cout << "Error rendering text";
+            return 1;
+        }
+
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error after rendercall: " << err << std::endl;
+            return 1;
+        }
+
         glfwSwapBuffers(window);
-        glfwPollEvents();    
+        glfwPollEvents();
+        loop_count += 1;
     }
 
     glDeleteShader(vertexShader);
