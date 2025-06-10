@@ -16,7 +16,8 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-auto camera = glm::vec3(0.0f, 0.0f, 2.0f);
+auto default_camera = glm::vec3(0.0f, 0.0f, 2.0f);
+auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
 auto farDistance = 5.0f;
@@ -33,7 +34,7 @@ double width = 800;
 // float ds_width = 346;
 // float ds_height = 260;
 
-float speed = 0.02f;
+float speed = 0.05f;
 
 // static float yaw = 90.0f; // Start facing backward?
 static float yaw = -90.0f; 
@@ -63,16 +64,19 @@ void processInput(GLFWwindow *window)
     
     glm::vec3 forward = glm::normalize(aim - camera);
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0))); // Right vector
+    glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); // Right vector
 
 
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        camera -= speed * forward;
+        // camera -= speed * forward;
+        camera += speed * up;
         // aim -= speed * forward;
     }
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        camera += speed * forward;
+        camera -= speed * up;
+        // camera += speed * forward;
         // aim += speed * forward;
     }
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
@@ -85,54 +89,68 @@ void processInput(GLFWwindow *window)
         camera -= speed * right;
         // aim -= speed * right;
     }
-    aim = camera + forward;
-
-
-    glfwGetCursorPos(window, &mousex, &mousey);
-   
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-        last_mouse_event = 0;
-   
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
-        if (last_mouse_event == 0)
-        {
-            mousex_last = mousex;
-            mousey_last = mousey;
-            last_mouse_event = 1;           
-        }
-        else
-        {   
-            float xdiff = (mousex - mousex_last)/width;
-            float ydiff = (mousey - mousey_last)/height;
-            
-            float sensitivity = 50.0f; // Tune sensitivity
-            yaw += xdiff * sensitivity;
-            pitch -= ydiff * sensitivity; // Invert Y for natural movement
-
-            pitch = glm::clamp(pitch, -89.0f, 89.0f); // Prevent flipping
-            
-            glm::vec3 direction;
-            direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            direction.y = sin(glm::radians(pitch));
-            direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-
-            aim = camera + direction;
-            
-            mousex_last = mousex;
-            mousey_last = mousey;
-        }
-        
+        camera += speed * forward;
+        // aim += speed * right;
     }
+    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        camera -= speed * forward;
+        // aim -= speed * right;
+    }
+    // aim = camera + forward;
+     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+    {
+        camera = default_camera;
+        // aim -= speed * right;
+    }
+
+    // glfwGetCursorPos(window, &mousex, &mousey);
+   
+    // if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+    //     last_mouse_event = 0;
+   
+    // if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    // {
+    //     if (last_mouse_event == 0)
+    //     {
+    //         mousex_last = mousex;
+    //         mousey_last = mousey;
+    //         last_mouse_event = 1;           
+    //     }
+    //     else
+    //     {   
+    //         float xdiff = (mousex - mousex_last)/width;
+    //         float ydiff = (mousey - mousey_last)/height;
+            
+    //         float sensitivity = 50.0f; // Tune sensitivity
+    //         yaw += xdiff * sensitivity;
+    //         pitch -= ydiff * sensitivity; // Invert Y for natural movement
+
+    //         pitch = glm::clamp(pitch, -89.0f, 89.0f); // Prevent flipping
+            
+    //         glm::vec3 direction;
+    //         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    //         direction.y = sin(glm::radians(pitch));
+    //         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+    //         aim = camera + direction;
+            
+    //         mousex_last = mousex;
+    //         mousey_last = mousey;
+    //     }
+        
+    // }
     // std::cout << "AIM: " << aim.x << ", " << aim.y << ", " << aim.z << ", (mousex =" << mousex << std::endl;
     // std::cout << "CAM: " << camera.x << ", " << camera.y << ", " << camera.z << ", (mousex =" << mousex << std::endl;
 
-    //clamp
-    camera.x = std::clamp(camera.x, -1.0f, 2.0f);
-    aim.x = std::clamp(aim.x, -1.0f, 2.0f);
+    // //clamp
+    // camera.x = std::clamp(camera.x, -1.0f, 2.0f);
+    // aim.x = std::clamp(aim.x, -1.0f, 2.0f);
 
-    camera.y = std::clamp(camera.y, -1.0f, 2.0f);
-    aim.y = std::clamp(aim.y, -1.0f, 2.0f);
+    // camera.y = std::clamp(camera.y, -1.0f, 2.0f);
+    // aim.y = std::clamp(aim.y, -1.0f, 2.0f);
 }
 
 int main()
@@ -190,6 +208,9 @@ int main()
 
     glViewport(0, 0, width, height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
 
     aspect_ratio = width/height;
     glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
