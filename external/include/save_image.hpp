@@ -1,3 +1,5 @@
+// https://lencerf.github.io/post/2019-09-21-save-the-opengl-rendering-to-image-file/
+
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>

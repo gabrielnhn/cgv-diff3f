@@ -11,6 +11,7 @@
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
 #include "save_image.hpp"
+#include "draw_text.hpp"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -289,6 +290,14 @@ int main()
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
     glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
     // glClearColor(0.0f,0.0f,0.0f,0.0f);
+
+    int text_loaded = textSetup();
+    if (not text_loaded)
+    {
+        std::cout << "TEXT LOADING FAILED" << std::endl;
+        return 0;
+    }
+
     while(!glfwWindowShouldClose(window))
     {
         while ((err = glGetError()) != GL_NO_ERROR) {
@@ -296,6 +305,9 @@ int main()
             return 1;
         }
         processInput(window); // recompute camera position
+
+        RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+
 
         // remake projection
         glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
