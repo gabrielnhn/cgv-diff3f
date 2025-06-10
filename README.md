@@ -10,5 +10,4 @@ GLM
 g++, C++23
 OpenMP
 libstb
-
-libfreetype6-dev?
+libfreetype6-dev

@@ -12,6 +12,7 @@
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
 #include "save_image.hpp"
+#include "load_image.hpp"
 #include "draw_text.hpp"
 
 #ifndef M_PI
@@ -137,6 +138,39 @@ void processInput(GLFWwindow *window)
     if (glm::length(camera) > max_distance_to_object)
         camera = glm::normalize(camera) * max_distance_to_object;
 
+}
+
+int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
+    std::string feature_image_path, std::string depth_image_path, GLFWwindow* window)
+{
+    myImage depth_image(depth_image_path);
+
+    glfwGetCursorPos(window, &mousex, &mousey);
+    // auto x_feat = width/2;
+    // auto y_feat = height/2;
+    float x_feat = mousex;
+    float y_feat = mousey;
+
+    float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
+    // image_value = (0.70 - (-depth/farPlaneDistance);
+    // image_value = (0.70 + depth/farPlaneDistance;
+    // depth/farPlaneDistance = image_value - 0.70;
+    float depth = (image_value - 0.70) * farDistance;
+
+
+    glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
+    glm::vec4 viewport_rect = glm::vec4(0.0f, 0.0f, width, height);
+
+    glm::vec3 world_point = glm::unProject(
+        unproj_coord,
+        current_mv,
+        current_projection,
+        viewport_rect
+    );
+
+    std::cout << "world point is: " << world_point.x << ", " << world_point.y << ", " << world_point.z << std::endl; 
+ 
+    return 1;
 }
 
 int main()
@@ -352,8 +386,9 @@ int main()
 
         if (should_save_next_frame)
         {
-            saveImage("./bruh.png", window);
+            saveImage("./bruh.png", window, false);
             should_save_next_frame = false;
+            unproject_image(projection, mv, "", "./bruh.png", window);
         }
 
 
