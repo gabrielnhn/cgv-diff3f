@@ -3,8 +3,10 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
 in vec4 geomPos[];
+in vec3 geomColor[];
 out vec3 normal;
 out vec4 fragPos;
+out vec3 fragColor;
 
 uniform mat4 mvp;
 
@@ -20,8 +22,9 @@ void main() {
     for (int i = 0; i < 3; i++) {
         normal = triangleNormal;
         fragPos = geomPos[i];
+        fragColor = geomColor[i];
         gl_Position = mvp * geomPos[i];
-        
+
         EmitVertex();
     }
     EndPrimitive();

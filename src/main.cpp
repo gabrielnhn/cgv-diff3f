@@ -311,7 +311,7 @@ int main()
         std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
-    unsigned int PHONGShaderProgram = glCreateProgram();
+    PHONGShaderProgram = glCreateProgram();
     glAttachShader(PHONGShaderProgram, PHONGVertexShader);
     glAttachShader(PHONGShaderProgram, PHONGGeometryShader);
     glAttachShader(PHONGShaderProgram, PHONGFragShader);
@@ -381,8 +381,9 @@ int main()
    
 
     // buffer model data to gpu
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
+    unsigned int VBOPos, VBOColor;
+    glGenBuffers(1, &VBOPos);
+    glGenBuffers(1, &VBOColor);
 
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);  
@@ -391,18 +392,18 @@ int main()
     unsigned int EBO;
     glGenBuffers(1, &EBO);
 
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after VAO defs: " << std::endl;
-        return 1;
-    }
-
-    // VBO FOR VERTICES
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);  
+    // VBOs FOR VERTICES
+    //pos
+    glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
     glBufferData(GL_ARRAY_BUFFER, off_object.vertices.size()*sizeof(glm::vec3), &off_object.vertices[0], GL_STATIC_DRAW);
-
-    // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float)*4, (void*)0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     glEnableVertexAttribArray(0);  
+    //color
+    glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+    glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+    glEnableVertexAttribArray(1);  
+
 
     // EBO FOR FACES
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -418,11 +419,6 @@ int main()
     int text_loaded = textSetup();
     assert(text_loaded);
 
-     while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL error before loops" << std::endl;
-        return 1;
-    }
-
     int loop_count = 0;
     while(!glfwWindowShouldClose(window))
     {
@@ -432,11 +428,6 @@ int main()
         glUseProgram(0);
         glUseProgram(currentRenderProgram);
 
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error after useProgram" << std::endl;
-            return 1;
-        }
-
         // remake projection
         projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
         view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
@@ -444,27 +435,14 @@ int main()
         mv = view * model;
 
         // set variable shader uniforms
-        glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mvp"), 1, GL_FALSE, glm::value_ptr(mvp));
+        int locationMVP = glGetUniformLocation(currentRenderProgram, "mvp");
+        glUniformMatrix4fv(locationMVP, 1, GL_FALSE, glm::value_ptr(mvp));
         
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error " << err << " after uniformmvp" << std::endl;
-            return 1;
-        }
         if (currentRenderProgram == DepthShaderProgram)
             glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mv"), 1, GL_FALSE, glm::value_ptr(mv));
         
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error " << err << " after uniformmv" << std::endl;
-            return 1;
-        }
-
-        glUniform3f(glGetUniformLocation(currentRenderProgram, "light_pos"), camera.x, camera.y, camera.z);
-        
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error " << err << " after uniform light pos" << std::endl;
-            return 1;
-        }
-
+        int locationLight = glGetUniformLocation(currentRenderProgram, "light_pos");
+        glUniform3f(locationLight, camera.x, camera.y, camera.z);
 
         glBindVertexArray(VAO);
 
@@ -497,6 +475,10 @@ int main()
             should_save_next_frame = false;
             unproject_image(projection, mv, "", "./bruh.png",
                 window, &off_object);
+            glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
+            glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.vertices[0], GL_DYNAMIC_DRAW);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+            glEnableVertexAttribArray(1);  
         }
 
         loop_count += 1;
