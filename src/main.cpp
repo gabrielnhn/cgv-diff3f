@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cassert>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -299,46 +300,31 @@ int main()
     // glClearColor(0.0f,0.0f,0.0f,0.0f);
 
     int text_loaded = textSetup();
-    if (not text_loaded)
-    {
-        std::cout << "TEXT LOADING FAILED" << std::endl;
-        return 0;
-    }
+    assert(text_loaded);
 
     int loop_count = 0;
     while(!glfwWindowShouldClose(window))
     {
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
-            // std::cerr << "OpenGL error: " << err << std::endl;
-            return 1;
-        }
-        processInput(window); // recompute camera position
-
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        processInput(window); // recompute camera position
 
         glUseProgram(shaderProgram);
         // remake projection
-        glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
+        projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
         view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
         mvp = projection * view * model;
         mv = view * model;
 
         // set variable shader uniforms
         int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         int mvLocation = glGetUniformLocation(shaderProgram, "mv");
+        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
         glUniform3f(glGetUniformLocation(shaderProgram, "light_pos"), camera.x, camera.y, camera.z);
         
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            // std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
-            std::cerr << "OpenGL error after useprogram: " << err << std::endl;
-            return 1;
-        }
-
         glBindVertexArray(VAO);
+
         // FOR POINT CLOUD
         // glPointSize(10.0f);
         // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
@@ -348,27 +334,23 @@ int main()
         glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
 
         // render text
-        int text_rendered = RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-        if (not text_rendered)
-        {
-            std::cout << "Error rendering text";
-            return 1;
-        }
-
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error after rendercall: " << err << std::endl;
-            return 1;
-        }
+        int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+        assert(text_rendered);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         loop_count += 1;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
+            return 1;
+        }
     }
 
     glDeleteShader(vertexShader);
     glDeleteShader(geometryShader); 
     glDeleteShader(fragShader); 
-    glDeleteProgram(shaderProgram); 
+    glDeleteProgram(shaderProgram);
+    textFinish();
 
     return 0;
 }
