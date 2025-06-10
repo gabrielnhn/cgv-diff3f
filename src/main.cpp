@@ -157,15 +157,10 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     myImage depth_image(depth_image_path);
 
     glfwGetCursorPos(window, &mousex, &mousey);
-    // auto x_feat = width/2;
-    // auto y_feat = height/2;
     float x_feat = mousex;
     float y_feat = mousey;
 
     float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
-    // image_value = (0.70 - (-depth/farPlaneDistance);
-    // image_value = (0.70 + depth/farPlaneDistance;
-    // depth/farPlaneDistance = image_value - 0.70;
     float depth = (image_value - 0.70) * farDistance;
 
 
@@ -192,7 +187,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];
-    off_object->features[closest_point_index] = glm::vec3(1.0, 1.0, 1.0);
+    std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
+    off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
 
     return 1;
 }

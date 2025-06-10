@@ -12,5 +12,5 @@ void main()
 
     // postiion to apply depth map
     vec4 shadePosition = mv * vec4(vertexPosition, 1.0); 
-    vertexShade = -shadePosition.z;
+    vertexShade = shadePosition.z;
 };

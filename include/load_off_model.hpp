@@ -57,7 +57,7 @@ class OffModel {
 			vertices.push_back(glm::vec3(x,y,z));
 			
 			// important for later
-			features.push_back(glm::vec3(0.0));
+			features.push_back(glm::vec3(1.0));
 		}
 
 		// all faces
