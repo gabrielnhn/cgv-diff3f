@@ -16,11 +16,13 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-auto default_camera = glm::vec3(0.0f, 0.0f, 2.0f);
+float distance_to_object = 2.0f;
+auto default_camera = glm::vec3(0.0f, 0.0f, distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-auto farDistance = 5.0f;
+// auto farDistance = 5.0f;
+auto farDistance = 20.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
@@ -29,10 +31,6 @@ int last_mouse_event = GLFW_RELEASE;
 
 double height = 800;
 double width = 800;
-
-// // 346x260
-// float ds_width = 346;
-// float ds_height = 260;
 
 float speed = 0.05f;
 
@@ -66,7 +64,6 @@ void processInput(GLFWwindow *window)
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0))); // Right vector
     glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); // Right vector
 
-
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
         // camera -= speed * forward;
@@ -82,70 +79,60 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
         camera += speed * right;
-        // aim += speed * right;
     }
     if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
         camera -= speed * right;
-        // aim -= speed * right;
     }
     if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         camera += speed * forward;
-        // aim += speed * right;
     }
     if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         camera -= speed * forward;
-        // aim -= speed * right;
     }
-    // aim = camera + forward;
      if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
     {
         camera = default_camera;
-        // aim -= speed * right;
     }
 
-    // glfwGetCursorPos(window, &mousex, &mousey);
+    glfwGetCursorPos(window, &mousex, &mousey);
    
-    // if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-    //     last_mouse_event = 0;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+        last_mouse_event = 0;
    
-    // if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-    // {
-    //     if (last_mouse_event == 0)
-    //     {
-    //         mousex_last = mousex;
-    //         mousey_last = mousey;
-    //         last_mouse_event = 1;           
-    //     }
-    //     else
-    //     {   
-    //         float xdiff = (mousex - mousex_last)/width;
-    //         float ydiff = (mousey - mousey_last)/height;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    {
+        if (last_mouse_event == 0)
+        {
+            mousex_last = mousex;
+            mousey_last = mousey;
+            last_mouse_event = 1;           
+        }
+        else
+        {   
+            float xdiff = (mousex - mousex_last)/width;
+            float ydiff = (mousey - mousey_last)/height;
             
-    //         float sensitivity = 50.0f; // Tune sensitivity
-    //         yaw += xdiff * sensitivity;
-    //         pitch -= ydiff * sensitivity; // Invert Y for natural movement
+            float sensitivity = 10.0f;
 
-    //         pitch = glm::clamp(pitch, -89.0f, 89.0f); // Prevent flipping
+            camera -= xdiff * right * sensitivity;
+            camera -= ydiff * up * sensitivity;
             
-    //         glm::vec3 direction;
-    //         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    //         direction.y = sin(glm::radians(pitch));
-    //         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-
-    //         aim = camera + direction;
-            
-    //         mousex_last = mousex;
-    //         mousey_last = mousey;
-    //     }
+            mousex_last = mousex;
+            mousey_last = mousey;
+        }
         
-    // }
+    }
     // std::cout << "AIM: " << aim.x << ", " << aim.y << ", " << aim.z << ", (mousex =" << mousex << std::endl;
     // std::cout << "CAM: " << camera.x << ", " << camera.y << ", " << camera.z << ", (mousex =" << mousex << std::endl;
 
     // //clamp
+    camera.x = std::clamp(camera.x, -distance_to_object, +distance_to_object);
+    camera.y = std::clamp(camera.y, -distance_to_object, +distance_to_object);
+    camera.z = std::clamp(camera.z, -distance_to_object, +distance_to_object);
+
     // camera.x = std::clamp(camera.x, -1.0f, 2.0f);
     // aim.x = std::clamp(aim.x, -1.0f, 2.0f);
 
@@ -267,10 +254,10 @@ int main()
     //         "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
     //     "}\0";
     
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
