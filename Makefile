@@ -1,4 +1,6 @@
-INC=-I./include/
+MYINC=-I./external/include/ -I./include/
+MYPARAMS= -std=c++23 -Wall 
+MYLIBS = -fopenmp -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 
 all: 
-	g++ main.cpp src/glad.c -fopenmp -std=c++23 -Wall -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -I ./include/
+	g++ main.cpp external/src/glad.c $(MYINC) $(MYPARAMS) $(MYLIBS)
