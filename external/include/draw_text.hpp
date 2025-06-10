@@ -125,6 +125,13 @@ int textSetup()
     textProgram = glCreateProgram();
     glAttachShader(textProgram, textVertexShader);
     glAttachShader(textProgram, textFragShader);
+    glLinkProgram(textProgram);
+
+    glGetProgramiv(textProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(textProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FULLTEXTPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
+    }
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
