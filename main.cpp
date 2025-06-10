@@ -117,6 +117,97 @@ int main()
 {
     GLenum err;
 
+    // PREPARE WINDOW
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  
+    GLFWwindow* window = glfwCreateWindow(width, height, "Diff3F Experiments", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window..." << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }   
+
+    glViewport(0, 0, width, height);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
+    aspect_ratio = width/height;
+    
+    // PREPARE SHADERS
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error before shader definition" << err << std::endl;
+    }
+    
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
+    glCompileShader(vertexShader);
+    //
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int geometryShader;
+    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometryShader, 1, &geometryShaderSource.text, NULL);
+    glCompileShader(geometryShader);
+    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int fragShader;
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragShader, 1, &fragShaderSource.text, NULL);
+    glCompileShader(fragShader);
+    //
+    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, geometryShader);
+    glAttachShader(shaderProgram, fragShader);
+
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
+    }
+    glUseProgram(shaderProgram);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
+    // load model data
+
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
     const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
@@ -148,35 +239,18 @@ int main()
     mvp = projection * view * model;
     mv = view * model;
 
-    // prepare window
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  
-    GLFWwindow* window = glfwCreateWindow(width, height, "Diff3F Experiments", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window..." << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
+    // set shader uniforms
+    int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
+    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+    int mvLocation = glGetUniformLocation(shaderProgram, "mv");
+    glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
+    int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
+    glUniform1f(farLocation, farDistance);
+    glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }   
 
-    glViewport(0, 0, width, height);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-
-    aspect_ratio = width/height;
-    
+    // buffer model data to gpu
     unsigned int VBO;
     glGenBuffers(1, &VBO);
 
@@ -199,78 +273,6 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, off_object.faces.size()*sizeof(glm::ivec3), &off_object.faces[0], GL_STATIC_DRAW); 
 
-
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL error before shader definition" << err << std::endl;
-    }
-    
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
-
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    // glShaderSource(vertexShader, 1, &vertexShaderSourceGLSLCode, NULL);
-    glShaderSource(vertexShader, 1, &vertexShaderSource.text, NULL);
-    glCompileShader(vertexShader);
-    //
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    //
-    unsigned int geometryShader;
-    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    glShaderSource(geometryShader, 1, &geometryShaderSource.text, NULL);
-    glCompileShader(geometryShader);
-    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    //
-    unsigned int fragShader;
-    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    // glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
-    glShaderSource(fragShader, 1, &fragShaderSource.text, NULL);
-    glCompileShader(fragShader);
-    //
-    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FRAG::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    //
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, geometryShader);
-    glAttachShader(shaderProgram, fragShader);
-
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
-    }
-    glUseProgram(shaderProgram);
-    glEnable(GL_PROGRAM_POINT_SIZE);
-
-
-    int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
-    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-    int mvLocation = glGetUniformLocation(shaderProgram, "mv");
-    glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
-    int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
-    glUniform1f(farLocation, farDistance);
-    glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
-    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
-
     glEnable(GL_DEPTH_TEST);
 
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
@@ -281,6 +283,7 @@ int main()
             std::cerr << "OpenGL error: " << err << std::endl;
             return 1;
         }
+        processInput(window); // recompute camera position
 
         // remake projection
         glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
@@ -288,14 +291,12 @@ int main()
         mvp = projection * view * model;
         mv = view * model;
 
-
+        // reset uniforms
         int mvpLocation = glGetUniformLocation(shaderProgram, "mvp");
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         int mvLocation = glGetUniformLocation(shaderProgram, "mv");
         glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
         glUniform3f(glGetUniformLocation(shaderProgram, "light_pos"), camera.x, camera.y, camera.z);
-
-        processInput(window);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
