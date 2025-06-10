@@ -42,6 +42,11 @@ glm::mat4 mv;
 
 float aspect_ratio = width/height;
 
+// image saving stuff
+bool should_save_next_frame = false;
+
+
+
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     width = w;
@@ -98,7 +103,7 @@ void processInput(GLFWwindow *window)
     
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
     {
-        saveImage("./bruh.png", window);
+        should_save_next_frame = true;
     }
 
     //mouse
@@ -296,8 +301,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
-    glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
-    // glClearColor(0.0f,0.0f,0.0f,0.0f);
+    // glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
+    glClearColor(0.0f,0.0f,0.0f,0.0f);
 
     int text_loaded = textSetup();
     assert(text_loaded);
@@ -333,17 +338,33 @@ int main()
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
 
+        
         // render text
-        int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-        assert(text_rendered);
+        if (not should_save_next_frame)
+        {
+            int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+            assert(text_rendered);
+        }
+        
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (should_save_next_frame)
+        {
+            saveImage("./bruh.png", window);
+            should_save_next_frame = false;
+        }
+
+
+
         loop_count += 1;
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
             return 1;
         }
+
+       
     }
 
     glDeleteShader(vertexShader);
