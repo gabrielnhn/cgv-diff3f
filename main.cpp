@@ -16,8 +16,8 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-float distance_to_object = 2.0f;
-auto default_camera = glm::vec3(0.0f, 0.0f, distance_to_object);
+float max_distance_to_object = 2.0f;
+auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
@@ -34,9 +34,6 @@ double width = 800;
 
 float speed = 0.05f;
 
-// static float yaw = 90.0f; // Start facing backward?
-static float yaw = -90.0f; 
-static float pitch = 0.0f;
 glm::mat4 mvp;
 glm::mat4 mv;
 
@@ -129,9 +126,9 @@ void processInput(GLFWwindow *window)
     // std::cout << "CAM: " << camera.x << ", " << camera.y << ", " << camera.z << ", (mousex =" << mousex << std::endl;
 
     // //clamp
-    camera.x = std::clamp(camera.x, -distance_to_object, +distance_to_object);
-    camera.y = std::clamp(camera.y, -distance_to_object, +distance_to_object);
-    camera.z = std::clamp(camera.z, -distance_to_object, +distance_to_object);
+    camera.x = std::clamp(camera.x, -max_distance_to_object, +max_distance_to_object);
+    camera.y = std::clamp(camera.y, -max_distance_to_object, +max_distance_to_object);
+    camera.z = std::clamp(camera.z, -max_distance_to_object, +max_distance_to_object);
 
     // camera.x = std::clamp(camera.x, -1.0f, 2.0f);
     // aim.x = std::clamp(aim.x, -1.0f, 2.0f);
@@ -255,7 +252,8 @@ int main()
     //     "}\0";
     
     auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
+    auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
     // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
     // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
 
@@ -273,6 +271,16 @@ int main()
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     //
+    unsigned int geometryShader;
+    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometryShader, 1, &geometryShaderSource.text, NULL);
+    glCompileShader(geometryShader);
+    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //
     unsigned int fragShader;
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     // glShaderSource(fragShader, 1, &fragShaderSourceGLSLCode, NULL);
@@ -288,6 +296,7 @@ int main()
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragShader);
 
     glLinkProgram(shaderProgram);
@@ -306,6 +315,9 @@ int main()
     glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
     int farLocation = glGetUniformLocation(shaderProgram, "farPlaneDistance");
     glUniform1f(farLocation, farDistance);
+    glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+    glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
+
 
     // glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
     // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size()/3);
@@ -335,7 +347,7 @@ int main()
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         int mvLocation = glGetUniformLocation(shaderProgram, "mv");
         glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(mv));
-
+        glUniform3f(glGetUniformLocation(shaderProgram, "light_pos"), camera.x, camera.y, camera.z);
 
         processInput(window);
 
