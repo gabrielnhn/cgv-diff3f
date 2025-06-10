@@ -59,7 +59,7 @@ void processInput(GLFWwindow *window)
     
     glm::vec3 forward = glm::normalize(aim - camera);
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0))); // Right vector
-    glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); // Right vector
+    glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); 
 
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
@@ -122,19 +122,12 @@ void processInput(GLFWwindow *window)
         }
         
     }
-    // std::cout << "AIM: " << aim.x << ", " << aim.y << ", " << aim.z << ", (mousex =" << mousex << std::endl;
-    // std::cout << "CAM: " << camera.x << ", " << camera.y << ", " << camera.z << ", (mousex =" << mousex << std::endl;
+    
+    //clamp
+    if (glm::length(camera) > max_distance_to_object) {
+        camera = glm::normalize(camera) * max_distance_to_object;
+    }
 
-    // //clamp
-    camera.x = std::clamp(camera.x, -max_distance_to_object, +max_distance_to_object);
-    camera.y = std::clamp(camera.y, -max_distance_to_object, +max_distance_to_object);
-    camera.z = std::clamp(camera.z, -max_distance_to_object, +max_distance_to_object);
-
-    // camera.x = std::clamp(camera.x, -1.0f, 2.0f);
-    // aim.x = std::clamp(aim.x, -1.0f, 2.0f);
-
-    // camera.y = std::clamp(camera.y, -1.0f, 2.0f);
-    // aim.y = std::clamp(aim.y, -1.0f, 2.0f);
 }
 
 int main()
@@ -230,27 +223,6 @@ int main()
         std::cerr << "OpenGL error before shader definition" << err << std::endl;
     }
     
-    // const char *vertexShaderSourceGLSLCode =
-    //     "#version 330 core\n"
-    //     "layout (location = 0) in vec3 vertexPosition; // Expecting vec4 for each vertex\n"
-    //     "uniform mat4 mvp;  // Model-View-Projection matrix\n"
-    //     "out float vertexShade;  // Output color to fragment shader\n"
-    //     "void main()\n"
-    //     "{\n"
-    //     "    vertexShade = vertexPosition.z;\n"  // Pass the position directly to the fragment shader for color"
-    //     // "    gl_PointSize = 5.0;\n"
-    //     "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"  // Apply MVP transformation"
-    //     "}\0";
-
-    
-    // const char *fragShaderSourceGLSLCode = "#version 330 core\n"
-    //     "out vec4 FragColor;\n"
-    //     "in float vertexShade;\n"
-    //     "void main()\n"
-    //     "{\n"
-    //         "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-    //     "}\0";
-    
     auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
     auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
     auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
@@ -318,14 +290,7 @@ int main()
     glUniform3f(glGetUniformLocation(shaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
     glUniform3f(glGetUniformLocation(shaderProgram, "ambient_light"), 0.2f, 0.2f, 0.2f); 
 
-
-    // glUniform1i(glGetUniformLocation(shaderProgram, "total_vertices"), off_model.vertices.size());
-    // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size()/3);
-    // glUniform1i(glGetUniformLocation(shaderProgram, "column_size"), off_model.vertices.size());
-
     glEnable(GL_DEPTH_TEST);
-    // glDisable(GL_CULL_FACE);
-    // glFrontFace(GL_CCW); // Changes default to Clockwise
 
     // glClearColor(1.0f,1.0f,1.0f,1.0f);
     glClearColor(0.0f,0.0f,0.0f,0.0f);
@@ -369,7 +334,9 @@ int main()
     }
 
     glDeleteShader(vertexShader);
+    glDeleteShader(geometryShader); 
     glDeleteShader(fragShader); 
+    glDeleteProgram(shaderProgram); 
 
     return 0;
 }
