@@ -141,7 +141,8 @@ void processInput(GLFWwindow *window)
 }
 
 int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
-    std::string feature_image_path, std::string depth_image_path, GLFWwindow* window)
+    std::string feature_image_path, std::string depth_image_path,
+    GLFWwindow* window, OffModel* off_object)
 {
     myImage depth_image(depth_image_path);
 
@@ -170,6 +171,19 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
     std::cout << "world point is: " << world_point.x << ", " << world_point.y << ", " << world_point.z << std::endl; 
  
+    int closest_point_index = 0;
+    auto closest_distance = glm::distance(world_point, off_object->vertices[closest_point_index]);
+    for (long unsigned int i = 1; i < off_object->vertices.size(); i++)
+    {
+        float this_distance = glm::distance(world_point, off_object->vertices[i]);
+        if (this_distance < closest_distance)
+        {
+            closest_point_index = i;
+        }
+    }
+    // auto closest_point = off_object->vertices[closest_point_index];
+    off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
+
     return 1;
 }
 
@@ -388,7 +402,8 @@ int main()
         {
             saveImage("./bruh.png", window, false);
             should_save_next_frame = false;
-            unproject_image(projection, mv, "", "./bruh.png", window);
+            unproject_image(projection, mv, "", "./bruh.png",
+                window, &off_object);
         }
 
 
