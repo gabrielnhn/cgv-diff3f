@@ -6,3 +6,4 @@ GLAD framework
 put Glad stuff in external/ ?
 GLM
 g++, C++23
+OpenMP

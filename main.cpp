@@ -8,7 +8,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp> 
 
-// #include "npy.hpp"
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
 
@@ -16,18 +15,18 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-float max_distance_to_object = 2.0f;
+float max_distance_to_object = 2;
 auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-// auto farDistance = 5.0f;
 auto farDistance = 20.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
 double mousex_last, mousey_last;
 int last_mouse_event = GLFW_RELEASE;
+float sensitivity = 10.0f;
 
 double height = 800;
 double width = 800;
@@ -51,49 +50,36 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 
 }  
 
-// Move camera position according to keyboard and stuff
+// move camera position according to keyboard and stuff
 void processInput(GLFWwindow *window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
     glm::vec3 forward = glm::normalize(aim - camera);
-    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0))); // Right vector
+    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
     glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0))); 
 
+    // keyboard
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        // camera -= speed * forward;
-        camera += speed * up;
-        // aim -= speed * forward;
-    }
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    {
         camera -= speed * up;
-        // camera += speed * forward;
-        // aim += speed * forward;
-    }
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        camera += speed * right;
-    }
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        camera -= speed * right;
-    }
-    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-    {
-        camera += speed * forward;
-    }
-    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-    {
-        camera -= speed * forward;
-    }
-     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-    {
-        camera = default_camera;
-    }
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera += speed * up;
 
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera += speed * right;
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera -= speed * right;
+
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera += speed * forward;
+    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera -= speed * forward;
+
+    if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        camera = default_camera;
+
+    //mouse
     glfwGetCursorPos(window, &mousex, &mousey);
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
@@ -111,8 +97,6 @@ void processInput(GLFWwindow *window)
         {   
             float xdiff = (mousex - mousex_last)/width;
             float ydiff = (mousey - mousey_last)/height;
-            
-            float sensitivity = 10.0f;
 
             camera -= xdiff * right * sensitivity;
             camera -= ydiff * up * sensitivity;
@@ -120,10 +104,9 @@ void processInput(GLFWwindow *window)
             mousex_last = mousex;
             mousey_last = mousey;
         }
-        
     }
     
-    //clamp
+    //clamp with radius=max_distance
     if (glm::length(camera) > max_distance_to_object) {
         camera = glm::normalize(camera) * max_distance_to_object;
     }
@@ -140,29 +123,32 @@ int main()
     
     std::cout << "READING: " << path << std::endl;
     
-    OffModel off_model(path);
+    OffModel off_object(path);
 
-    glm::vec3 bbMin(  std::numeric_limits<float>::max());
-    glm::vec3 bbMax( -std::numeric_limits<float>::max());
+    // find model bounding box
+    glm::vec3 bbMin( std::numeric_limits<float>::max());
+    glm::vec3 bbMax(-std::numeric_limits<float>::max());
 
-    for (auto &v : off_model.vertices) {
+    for (auto &v: off_object.vertices) {
         bbMin = glm::min(bbMin, v);
         bbMax = glm::max(bbMax, v);
     }
-    glm::vec3 centre = 0.5f * (bbMin + bbMax);
+    
+    glm::vec3 center = (bbMin + bbMax) * 0.5f;
     float diag = glm::length(bbMax - bbMin);
 
-    // --- build a model matrix that recentres & rescales -------------------------
+    // move and scale to fit bbox
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, -centre); 
+    model = glm::translate(model, -center); 
     model = glm::scale(model, glm::vec3(2.0f / diag));
 
+    // prepare mvp matrices
+    glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
+    glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
+    mvp = projection * view * model;
+    mv = view * model;
 
-    glm::vec4 obj = model * glm::vec4(off_model.vertices[0], 1.0f);
-    std::cout << "fitted v0: "
-          << obj.x << ", " << obj.y << ", " << obj.z << '\n';
-
-
+    // prepare window
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -190,12 +176,7 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
 
     aspect_ratio = width/height;
-    glm::mat4 projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
-
-    glm::mat4 view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-    mvp = projection * view * model;
-    mv = view * model;
-
+    
     unsigned int VBO;
     glGenBuffers(1, &VBO);
 
@@ -208,7 +189,7 @@ int main()
 
     // VBO FOR VERTICES
     glBindBuffer(GL_ARRAY_BUFFER, VBO);  
-    glBufferData(GL_ARRAY_BUFFER, off_model.vertices.size()*sizeof(glm::vec3), &off_model.vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, off_object.vertices.size()*sizeof(glm::vec3), &off_object.vertices[0], GL_STATIC_DRAW);
 
     // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float)*4, (void*)0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
@@ -216,7 +197,7 @@ int main()
 
     // EBO FOR FACES
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, off_model.faces.size()*sizeof(glm::ivec3), &off_model.faces[0], GL_STATIC_DRAW); 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, off_object.faces.size()*sizeof(glm::ivec3), &off_object.faces[0], GL_STATIC_DRAW); 
 
 
     while ((err = glGetError()) != GL_NO_ERROR) {
@@ -323,11 +304,11 @@ int main()
         // FOR POINT CLOUD
         // glPointSize(10.0f); // Set point size to 10 pixels
         // glBindVertexArray(VAO);
-        // glDrawArrays(GL_POINTS, 0, off_model.vertices.size());
+        // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
 
         // FOR SURFACES
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES, off_model.faces.size()*3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();    
