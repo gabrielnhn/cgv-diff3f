@@ -253,8 +253,10 @@ int main()
     //         "FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
     //     "}\0";
     
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_red.glsl");
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -309,8 +311,8 @@ int main()
     // glDisable(GL_CULL_FACE);
     // glFrontFace(GL_CCW); // Changes default to Clockwise
 
-    // glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
-    glClearColor(1.0f,1.0f,1.0f,1.0f);
+    // glClearColor(1.0f,1.0f,1.0f,1.0f);
+    glClearColor(0.0f,0.0f,0.0f,0.0f);
     // int once = 0;
     while(!glfwWindowShouldClose(window))
     {
