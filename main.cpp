@@ -158,15 +158,15 @@ int main()
     }
     
     // VERTEX OPTIONS
-    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
-    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
+    auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_depth.glsl");
+    // auto vertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
     
     // GEOM OPTIONS
     auto geometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
     
     // FRAG OPTIONS
-    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
-    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+    auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_depth.glsl");
+    // auto fragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
 
     int success;
     char infoLog[512];
@@ -200,7 +200,7 @@ int main()
     //
     unsigned int shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, geometryShader);
+    // glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragShader);
 
     glLinkProgram(shaderProgram);

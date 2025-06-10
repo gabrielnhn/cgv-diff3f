@@ -2,12 +2,9 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-in vec4 geomPos[]; // Input positions from vertex shader
-// in case of depth?
-// out float vertexShade;
-out vec3 normal; // Output normal
-out vec4 fragPos; // Output fragment position
-
+in vec4 geomPos[];
+out vec3 normal;
+out vec4 fragPos;
 
 uniform mat4 mvp;
 
@@ -23,9 +20,8 @@ void main() {
     for (int i = 0; i < 3; i++) {
         normal = triangleNormal;
         fragPos = geomPos[i];
-        gl_Position = mvp * geomPos[i]; // Apply MVP transform
-
-        // vertexShade = - gl_Position.z;
+        gl_Position = mvp * geomPos[i];
+        
         EmitVertex();
     }
     EndPrimitive();
