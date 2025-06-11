@@ -17,5 +17,6 @@ void main()
     vec3 ambient = ambient_light * object_color;
     float diffuse_ang = max(0.0f, dot(normal, light_dir));
     vec3 diffuse = diffuse_ang * object_color;
-    FragColor = vec4((ambient + diffuse)*object_color, 1.0);
+    vec4 intermediateFragColor = vec4((ambient + diffuse)*object_color, 1.0);
+    FragColor = vec4(gl_FragCoord.z, intermediateFragColor.yzw);
 };

@@ -196,7 +196,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         {
             closest_point_index = i;
             closest_distance = this_distance;
-            off_object->features[i] = glm::vec3(1.0, 0.0, 0.0);
+            off_object->features[i] = glm::vec3(0.0, 1.0, 0.0);
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];
