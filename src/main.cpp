@@ -177,27 +177,22 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
                                     current_mv,
                                     current_projection,
                                     viewport);
-        // int sx = int(ndc.x + 0.5f);
-        // int sy = int(ndc.y + 0.5f);
-        int sx = ndc.x;
-        int sy = ndc.y;
+      
 
-        if (sx < 0 || sx >= width || sy < 0 || sy >= height) continue;
+        if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
 
-        // float depthBuf = depthBuffer[sy * width + sx];        // already 0–1
-        float depthBuf = depth_image.getValue(height - sy,sx).r;        // already 0–1
-        float projDepth = ndc.z;                              // also 0–1
+        float depthBuf = depth_image.getValue(height - ndc.y,ndc.x).r;
+        float projDepth = ndc.z;
 
-        if (projDepth < depthBuf + 0.01)              // ε ≈ 1e-3 fine
+        if (projDepth < depthBuf + 0.01)
         {
-            ++off_object->hits[i];
-            float w = 1.0f / off_object->hits[i];
-            off_object->features[i] =
-                off_object->features[i] * (1.0f - w)
-                + glm::vec3(0.0f, random_float1+small_noise, random_float2+small_noise) * w;
+            off_object->hits[i] += 1;
+            float weight = 1.0f / off_object->hits[i];
+            auto prev_value = off_object->features[i] * (1.0f - weight);
+            auto new_value = glm::vec3(0.0f, random_float1+small_noise, random_float2+small_noise) * weight;
+            off_object->features[i] = prev_value + new_value;
         }
     }
-
     
     // auto closest_point = off_object->vertices[closest_point_index];
     // std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
