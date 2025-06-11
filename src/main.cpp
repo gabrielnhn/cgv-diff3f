@@ -59,6 +59,7 @@ unsigned int VBOPos, VBOColor;
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
+    (void)window; // avoid warning
     width = w;
     height = h;
     glViewport(0, 0, width, height);
@@ -194,12 +195,14 @@ void processInput(GLFWwindow *window)
 }
 
 int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
-    std::string feature_image_path, std::string depth_image_path,
-    GLFWwindow* window, OffModel* off_object, float diag)
+    // std::string feature_image_path,
+    std::string depth_image_path,
+    // GLFWwindow* window,
+    OffModel* off_object, float diag)
 {
-    float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-    float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-    float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    // float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    // float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    // float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
     myImage depth_image(depth_image_path);
 
@@ -227,7 +230,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float projDepth = ndc.z;
 
         // if (projDepth < depthBuf + 0.01)
-        if (projDepth < depthBuf + 0.003)
+        // if (projDepth < depthBuf + 0.003)
+        if (projDepth < depthBuf + diag*0.002)
         {
             off_object->hits[i] += 1;
             float weight = 1.0f / off_object->hits[i];
@@ -240,9 +244,6 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         }
     }
     
-    // auto closest_point = off_object->vertices[closest_point_index];
-    // std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
-    // off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
     updateModelVBO(off_object);
 
     return 1;
@@ -533,13 +534,15 @@ int main(int argc, char* argv[])
         {
             saveImage("./temp/depth.png", window, true);
             should_save_next_frame = false;
-            unproject_image(projection, mv, "", "./temp/depth.png",
-                window, &off_object, diag);
-            //color
-            // glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
-            // glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
-            // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
-            // glEnableVertexAttribArray(1);  
+            unproject_image(
+                projection,
+                mv,
+                // "",
+                "./temp/depth.png",
+                // window,
+                &off_object, diag
+            );
+              
             currentRenderProgram = PHONGShaderProgram;
         }
 

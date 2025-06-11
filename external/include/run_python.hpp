@@ -6,6 +6,7 @@
 
 int run_python(int argc, char* argv[], std::string path)
 {
+    (void)argc; // avoid unused param;
     const char* python_path = path.c_str();
     FILE* file = fopen(python_path, "r");
 
