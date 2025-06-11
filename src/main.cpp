@@ -84,6 +84,7 @@ std::map<int,GLFWwindow*> indexToWindow;
 
 std::vector<unsigned int> VAOs = {0,0};
 std::vector<unsigned int> EBOs = {0,0};
+std::vector<GLFWwindow*> windows = {NULL, NULL};  
 
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
@@ -108,6 +109,8 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 
 int updateModelVBO(OffModel* off_object, int windowIndex)
 {
+    glfwMakeContextCurrent(windows[windowIndex]);
+
     glBindBuffer(GL_ARRAY_BUFFER, VBOColors[windowIndex]);  
     glBufferData(GL_ARRAY_BUFFER, off_object->features.size()*sizeof(glm::vec3), &off_object->features[0], GL_DYNAMIC_DRAW);
     // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
@@ -244,7 +247,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     glm::vec4 viewport(0, 0, widths[i], heights[i]);
     
     #pragma omp parallel for
-    for (unsigned long int i = 0; i < off_object->vertices.size(); ++i)
+    for (unsigned long int k = 0; k < off_object->vertices.size(); k++)
     {
         float small_noise = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         small_noise = small_noise / 10.0;
@@ -265,14 +268,14 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         // if (projDepth < depthBuf + 0.003)
         if (projDepth < depthBuf + diag*0.002)
         {
-            off_object->hits[i] += 1;
-            float weight = 1.0f / off_object->hits[i];
-            auto prev_value = off_object->features[i] * (1.0f - weight);
+            off_object->hits[k] += 1;
+            float weight = 1.0f / off_object->hits[k];
+            auto prev_value = off_object->features[k] * (1.0f - weight);
             // auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
             auto new_value = magma * weight;
             
             
-            off_object->features[i] = prev_value + new_value;
+            off_object->features[k] = prev_value + new_value;
         }
     }
     
@@ -320,7 +323,8 @@ int main(int argc, char* argv[])
     aspect_ratios[0] = widths[0]/heights[0];
 
     
-     GLFWwindow* windowOther = glfwCreateWindow(widths[1], heights[1], "Diff3F Window 2", NULL, windowFirst);
+    // GLFWwindow* windowOther = glfwCreateWindow(widths[1], heights[1], "Diff3F Window 2", NULL, NULL);
+    GLFWwindow* windowOther = glfwCreateWindow(widths[1], heights[1], "Diff3F Window 2", NULL, windowFirst);
     if (windowOther == NULL)
     {
         std::cout << "Failed to create GLFW window..." << std::endl;
@@ -332,7 +336,7 @@ int main(int argc, char* argv[])
     indexToWindow[1] = windowOther;
     windowToIndex[windowOther] = 1;
 
-    std::vector<GLFWwindow*> windows = {windowFirst, windowOther};  
+    windows = {windowFirst, windowOther};  
 
     // PREPARE SHADERS (2 shader programs per window = 4)
     for(unsigned long int i = 0; i < windows.size(); i++)
@@ -448,7 +452,7 @@ int main(int argc, char* argv[])
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
     const std::string firstPath = "./SHREC_r/off_2/4.off";
-    const std::string otherPath = "./SHREC_r/off_2/5.off";
+    const std::string otherPath = "./SHREC_r/off_2/1.off";
     
     std::cout << "READING: " << firstPath << std::endl;
     OffModel firstObject(firstPath);
@@ -469,7 +473,7 @@ int main(int argc, char* argv[])
         glm::vec3 bbMin( std::numeric_limits<float>::max());
         glm::vec3 bbMax(-std::numeric_limits<float>::max());
         
-        for (auto &v: firstObject.vertices) {
+        for (auto &v: objects[i].vertices) {
             bbMin = glm::min(bbMin, v);
             bbMax = glm::max(bbMax, v);
         }
@@ -516,19 +520,19 @@ int main(int argc, char* argv[])
         // VBOs FOR VERTICES
         //pos
         glBindBuffer(GL_ARRAY_BUFFER, VBOPos[i]);  
-        glBufferData(GL_ARRAY_BUFFER, firstObject.vertices.size()*sizeof(glm::vec3), &firstObject.vertices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, objects[i].vertices.size()*sizeof(glm::vec3), &objects[i].vertices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
         glEnableVertexAttribArray(0);  
         //color
         glBindBuffer(GL_ARRAY_BUFFER, VBOColors[i]);  
-        glBufferData(GL_ARRAY_BUFFER, firstObject.features.size()*sizeof(glm::vec3), &firstObject.features[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, objects[i].features.size()*sizeof(glm::vec3), &objects[i].features[0], GL_DYNAMIC_DRAW);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
         glEnableVertexAttribArray(1);  
         
         
         // EBO FOR FACES
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, firstObject.faces.size()*sizeof(glm::ivec3), &firstObject.faces[0], GL_STATIC_DRAW); 
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[i].faces.size()*sizeof(glm::ivec3), &objects[i].faces[0], GL_STATIC_DRAW); 
         
         glEnable(GL_DEPTH_TEST);
         

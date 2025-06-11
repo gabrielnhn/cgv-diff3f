@@ -27,6 +27,7 @@ class myImage
 
     myImage(std::string path)
     {
+        // std::cout << "LOADING FROM IMAGE in PATH " << path << std::endl;
         unsigned char* imdata = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (not imdata) {
