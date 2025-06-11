@@ -27,7 +27,6 @@
 // float max_distance_to_object = 1.5;
 float max_distance_to_object = 2.0;
 auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
-auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
 // auto farDistance = 20.0f;
@@ -38,9 +37,6 @@ double mousex, mousey;
 double mousex_last, mousey_last;
 int last_mouse_event = GLFW_RELEASE;
 float sensitivity = 10.0f;
-
-float height = 800;
-float width = 800;
 
 float speed = 0.05f;
 
@@ -60,48 +56,52 @@ float speed = 0.05f;
 
 // unsigned int VBOPos, VBOColor;
 
+
+std::vector<glm::vec3>cameras = {default_camera, default_camera};
+std::vector<float> heights = {800, 800};
+std::vector<float> widths = {800, 800};
+
 std::vector<glm::mat4> mvps;
 std::vector<glm::mat4> mvs;
 
-std::vector<float> aspect_ratios = {width/height, width/height};
+std::vector<float> aspect_ratios = {widths[0]/heights[0], widths[1]/heights[1]};
 
 // image saving stuff
-bool should_save_next_frame = false;
-bool should_reset = false;
+std::vector<bool> should_save_next_frame = {false, false};
+std::vector<bool> should_reset = {false, false};
 
-unsigned int DepthShaderProgram;
-unsigned int PHONGShaderProgram;
-unsigned int currentRenderProgram = 0;
+std::vector<unsigned int> DepthShaderPrograms;
+std::vector<unsigned int> PHONGShaderPrograms;
+std::vector<unsigned int> currentRenderPrograms;
+std::vector<unsigned int> VBOPoss;
+std::vector<unsigned int> VBOColors;
 
-unsigned int VBOPos, VBOColor;
-
-
-int currentWindowIndex = 0;
-
-
+std::map<GLFWwindow*, int> windowToIndex;
+std::map<int,GLFWwindow*> indexToWindow;
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
-    (void)window; // avoid warning
-    width = w;
-    height = h;
-    glViewport(0, 0, width, height);
+    int i = windowToIndex[window];
+    widths[i] = w;
+    heights[i] = h;
+    glfwMakeContextCurrent(window);
+    glViewport(0, 0, w, h);
     std::cout << "CHANGED WINDOW SIZE to w,h" << w << ", " << h << std::endl;
-    std::cout << aspect_ratios[currentWindowIndex] << std::endl;
-    aspect_ratios[currentWindowIndex] = width/height;
-    std::cout << aspect_ratios[currentWindowIndex] << std::endl;
+    std::cout << aspect_ratios[i] << std::endl;
+    aspect_ratios[i] = w/h;
+    std::cout << aspect_ratios[i] << std::endl;
 
     // Update text projection matrix
-    glUseProgram(textProgram); // Activate text shader to set its uniform
-    glm::mat4 textProjection = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+    glUseProgram(textProgram);
+    glm::mat4 textProjection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
     int projectionLocation = glGetUniformLocation(textProgram, "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
-    glUseProgram(0); // Deactivate text shader
+    glUseProgram(0);
 }  
 
-int updateModelVBO(OffModel* off_object)
+int updateModelVBO(OffModel* off_object, int windowIndex)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+    glBindBuffer(GL_ARRAY_BUFFER, VBOColors[windowIndex]);  
     glBufferData(GL_ARRAY_BUFFER, off_object->features.size()*sizeof(glm::vec3), &off_object->features[0], GL_DYNAMIC_DRAW);
     // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     // glEnableVertexAttribArray(1); 
@@ -115,7 +115,7 @@ int updateModelVBO(OffModel* off_object)
 }
 
 
-void reset_features(OffModel* off_object)
+void reset_features(OffModel* off_object, int windowIndex)
 {
     #pragma omp parallel for
     for(long unsigned int i = 0; i < off_object->features.size(); i++)
@@ -123,17 +123,19 @@ void reset_features(OffModel* off_object)
         off_object->features[i] = off_object->default_feature;
         off_object->hits[i] = 0;
     }
-    updateModelVBO(off_object);
+    updateModelVBO(off_object, windowIndex);
 }
 
 
 // move camera position according to keyboard and stuff
 void processInput(GLFWwindow *window)
 {
+    int i = windowToIndex[window];
+
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
-    glm::vec3 forward = glm::normalize(aim - camera);
+    glm::vec3 forward = glm::normalize(aim - cameras[i]);
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
     glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0)));
     // up = glm::abs(up);
@@ -145,42 +147,42 @@ void processInput(GLFWwindow *window)
 
     // keyboard
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera -= speed * up;
+        cameras[i] -= speed * up;
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera += speed * up;
+        cameras[i] += speed * up;
 
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera += speed * right;
+        cameras[i] += speed * right;
     if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera -= speed * right;
+        cameras[i] -= speed * right;
 
     if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera += speed * forward;
+        cameras[i] += speed * forward;
     if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera -= speed * forward;
+        cameras[i] -= speed * forward;
 
     // if(glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
     {
-        camera = default_camera;
-        should_reset = true;
+        cameras[i] = default_camera;
+        should_reset[i] = true;
     }
     
     if((glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
         or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
     {
-        should_save_next_frame = true;
-        currentRenderProgram = DepthShaderProgram;
+        should_save_next_frame[i] = true;
+        currentRenderPrograms[i] = DepthShaderPrograms[i];
     }
 
 
     if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
     {
-        currentRenderProgram = PHONGShaderProgram;
+        currentRenderPrograms[i] = PHONGShaderPrograms[i];
     }
     if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
     {
-        currentRenderProgram = DepthShaderProgram;
+        currentRenderPrograms[i] = DepthShaderPrograms[i];
     }
 
     //mouse
@@ -199,11 +201,11 @@ void processInput(GLFWwindow *window)
         }
         else
         {   
-            float xdiff = (mousex - mousex_last)/width;
-            float ydiff = (mousey - mousey_last)/height;
+            float xdiff = (mousex - mousex_last)/widths[i];
+            float ydiff = (mousey - mousey_last)/heights[i];
 
-            camera -= xdiff * right * sensitivity;
-            camera -= ydiff * up * sensitivity;
+            cameras[i] -= xdiff * right * sensitivity;
+            cameras[i] -= ydiff * up * sensitivity;
             
             mousex_last = mousex;
             mousey_last = mousey;
@@ -211,17 +213,18 @@ void processInput(GLFWwindow *window)
     }
     
     // clamp with radius=max_distance
-    if (glm::length(camera) > max_distance_to_object)
-        camera = glm::normalize(camera) * max_distance_to_object;
+    if (glm::length(cameras[i]) > max_distance_to_object)
+        cameras[i] = glm::normalize(cameras[i]) * max_distance_to_object;
 
 }
 
 int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // std::string feature_image_path,
     std::string depth_image_path,
-    // GLFWwindow* window,
+    GLFWwindow* window,
     OffModel* off_object, float diag)
 {
+    int i = windowToIndex[window];
     // float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     // float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     // float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -231,7 +234,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // glfwGetCursorPos(window, &mousex, &mousey);
     // float x_feat = mousex;
     // float y_feat = mousey;
-    glm::vec4 viewport(0, 0, width, height);
+    glm::vec4 viewport(0, 0, widths[i], heights[i]);
     
     #pragma omp parallel for
     for (unsigned long int i = 0; i < off_object->vertices.size(); ++i)
@@ -247,8 +250,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
         if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
 
-        float depthBuf = depth_image.getValue(height - ndc.y,ndc.x).r;
-        glm::vec3 magma = depth_image.toMagma(height - ndc.y, ndc.x);
+        float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
+        glm::vec3 magma = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
         float projDepth = ndc.z;
 
         // if (projDepth < depthBuf + 0.01)
@@ -266,7 +269,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         }
     }
     
-    updateModelVBO(off_object);
+    updateModelVBO(off_object, i);
 
     return 1;
 }
@@ -283,7 +286,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   
-    GLFWwindow* windowFirst = glfwCreateWindow(width, height, "Diff3F Window 1", NULL, NULL);
+    GLFWwindow* windowFirst = glfwCreateWindow(widths[0], heights[0], "Diff3F Window 1", NULL, NULL);
     if (windowFirst == NULL)
     {
         std::cout << "Failed to create GLFW window..." << std::endl;
@@ -292,18 +295,23 @@ int main(int argc, char* argv[])
     }
     glfwMakeContextCurrent(windowFirst);
 
+    windowToIndex[windowFirst] = 0;
+    indexToWindow[0] = windowFirst;
+
+
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }   
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, widths[0], heights[0]);
     glfwSetFramebufferSizeCallback(windowFirst, framebuffer_size_callback);
 
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
     glfwSetInputMode(windowFirst, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-    aspect_ratio = width/height;
+    aspect_ratios[0] = widths[0]/heights[0];
     
     // PREPARE SHADERS
     while ((err = glGetError()) != GL_NO_ERROR) {
