@@ -19,7 +19,7 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-float max_distance_to_object = 2;
+float max_distance_to_object = 1.5;
 auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
@@ -104,10 +104,13 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
         camera = default_camera;
     
-    if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+    if((glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
     {
         should_save_next_frame = true;
     }
+
+
     if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
     {
         currentRenderProgram = PHONGShaderProgram;
