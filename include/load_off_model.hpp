@@ -12,6 +12,7 @@ class OffModel {
 	// Data member
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> features;
+	std::vector<int> hits;
 	std::vector<glm::ivec3> faces;
 	
 	// https://en.wikipedia.org/wiki/OFF_(file_format)
@@ -57,7 +58,9 @@ class OffModel {
 			vertices.push_back(glm::vec3(x,y,z));
 			
 			// important for later
-			features.push_back(glm::vec3(1.0));
+			// features.push_back(glm::vec3(1.0));
+			features.push_back(glm::vec3(0.1));
+			hits.push_back(0);
 		}
 
 		// all faces

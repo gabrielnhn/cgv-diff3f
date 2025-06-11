@@ -157,11 +157,13 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     std::string feature_image_path, std::string depth_image_path,
     GLFWwindow* window, OffModel* off_object, float diag)
 {
+    float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
     myImage depth_image(depth_image_path);
 
     glfwGetCursorPos(window, &mousex, &mousey);
     float x_feat = mousex;
-    // float y_feat = mousey;
     float y_feat = mousey;
 
     float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
@@ -171,7 +173,6 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
     // glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
     glm::vec3 unproj_coord = glm::vec3(x_feat, height - y_feat, depth);
-
 
 
     std::cout << "unproj: " << unproj_coord.x << ", " << unproj_coord.y << ", " << unproj_coord.z << std::endl; 
@@ -186,17 +187,22 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
     std::cout << "world point is: " << world_point.x << ", " << world_point.y << ", " << world_point.z << std::endl; 
  
-    int closest_point_index = 0;
-    auto closest_distance = glm::distance(world_point, off_object->vertices[closest_point_index]);
+    // int closest_point_index = 0;
+    // auto closest_distance = glm::distance(world_point, off_object->vertices[closest_point_index]);
     for (long unsigned int i = 1; i < off_object->vertices.size(); i++)
     {
         float this_distance = glm::distance(world_point, off_object->vertices[i]);
         // if (this_distance < closest_distance)
         if (this_distance < diag*0.02)
         {
-            closest_point_index = i;
-            closest_distance = this_distance;
-            off_object->features[i] = glm::vec3(0.0, 1.0, 0.0);
+            // closest_point_index = i;
+            // closest_distance = this_distance;
+            // off_object->features[i] = glm::vec3(0.0, 1.0, 0.0);
+            auto newval = (off_object->features[i] * (float)(off_object->hits[i])
+                + glm::vec3(0, random_float1, random_float2)) * 1.0f/(float)(off_object->hits[i] + 1);
+
+            off_object->features[i] = newval;
+            off_object->hits[i] += 1;
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];
