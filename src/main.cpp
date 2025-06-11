@@ -165,54 +165,36 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // glfwGetCursorPos(window, &mousex, &mousey);
     // float x_feat = mousex;
     // float y_feat = mousey;
+    glm::vec4 viewport(0, 0, width, height);
+    
     #pragma omp parallel for
-    for(int x = 0; x < (int)width; x++)
+    for (std::size_t i = 0; i < off_object->vertices.size(); ++i)
     {
-        float x_feat = x;
-        for(int y = 0; y < height; y++)
+        float small_noise = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        small_noise = small_noise / 10.0;
+
+        glm::vec3 ndc = glm::project(off_object->vertices[i],
+                                    current_mv,
+                                    current_projection,
+                                    viewport);
+        // int sx = int(ndc.x + 0.5f);
+        // int sy = int(ndc.y + 0.5f);
+        int sx = ndc.x;
+        int sy = ndc.y;
+
+        if (sx < 0 || sx >= width || sy < 0 || sy >= height) continue;
+
+        // float depthBuf = depthBuffer[sy * width + sx];        // already 0–1
+        float depthBuf = depth_image.getValue(height - sy,sx).r;        // already 0–1
+        float projDepth = ndc.z;                              // also 0–1
+
+        if (projDepth < depthBuf + 0.01)              // ε ≈ 1e-3 fine
         {
-            float y_feat = y;
-
-            // float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
-            float image_value = depth_image.getValue(x, y).r;
-            float depth = (image_value);
-            // image_value = 0.70 + (vertexShade/farPlaneDistance)
-            // float depth = -(image_value - 0.70) * farDistance;
-
-            // glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
-            glm::vec3 unproj_coord = glm::vec3(x_feat, height - y_feat, depth);
-
-
-            // std::cout << "unproj: " << unproj_coord.x << ", " << unproj_coord.y << ", " << unproj_coord.z << std::endl; 
-            glm::vec4 viewport_rect = glm::vec4(0.0f, 0.0f, width, height);
-
-            glm::vec3 world_point = glm::unProject(
-                unproj_coord,
-                current_mv,
-                current_projection,
-                viewport_rect
-            );
-
-            // std::cout << "world point is: " << world_point.x << ", " << world_point.y << ", " << world_point.z << std::endl; 
-        
-            // int closest_point_index = 0;
-            // auto closest_distance = glm::distance(world_point, off_object->vertices[closest_point_index]);
-            for (long unsigned int i = 1; i < off_object->vertices.size(); i++)
-            {
-                float this_distance = glm::distance(world_point, off_object->vertices[i]);
-                // if (this_distance < closest_distance)
-                if (this_distance < diag*0.02)
-                {
-                    // closest_point_index = i;
-                    // closest_distance = this_distance;
-                    off_object->features[i] = glm::vec3(0.0, 1.0, 0.0);
-                    auto newval = (off_object->features[i] * (float)(off_object->hits[i])
-                        + glm::vec3(0, random_float1, random_float2)) * 1.0f/(float)(off_object->hits[i] + 1);
-                    // auto newval = glm::vec3(0, random_float1, random_float2);
-                    off_object->features[i] = newval;
-                    off_object->hits[i] += 1;
-                }
-            }
+            ++off_object->hits[i];
+            float w = 1.0f / off_object->hits[i];
+            off_object->features[i] =
+                off_object->features[i] * (1.0f - w)
+                + glm::vec3(0.0f, random_float1+small_noise, random_float2+small_noise) * w;
         }
     }
 
