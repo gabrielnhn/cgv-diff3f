@@ -158,13 +158,16 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
     glfwGetCursorPos(window, &mousex, &mousey);
     float x_feat = mousex;
-    float y_feat = mousey;
+    // float y_feat = mousey;
+    float y_feat = height - 1 - mousey;
 
     float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
-    float depth = (image_value - 0.70) * farDistance;
-
+    // float depth = (1-image_value);
+    // image_value = 0.70 + (vertexShade/farPlaneDistance)
+    float depth = -(image_value - 0.70) * farDistance;
 
     glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
+    std::cout << "unproj: " << unproj_coord.x << ", " << unproj_coord.y << ", " << unproj_coord.z << std::endl; 
     glm::vec4 viewport_rect = glm::vec4(0.0f, 0.0f, width, height);
 
     glm::vec3 world_point = glm::unProject(
@@ -184,6 +187,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         if (this_distance < closest_distance)
         {
             closest_point_index = i;
+            closest_distance = this_distance;
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];

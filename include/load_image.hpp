@@ -30,20 +30,29 @@ class myImage
         }
 
         std::vector<unsigned char> image_buffer(imdata, imdata + (width * height * channels));
-        data = image_buffer;
-        stbi_image_free(imdata); // Free the memory allocated by stbi_load
-
+        // data = image_buffer;
+        data = std::move(image_buffer);
+        stbi_image_free(imdata);
     }
 
     glm::vec3 getValue(int i, int j)
     {
-        float toFloat = 1/255;
+        // float toFloat = 1.0f;
+        float toFloat = 1.0f / 255.0f;
 
-        int index = data[(i * width + j)*channels];
+        long unsigned int index = (long unsigned int)(i * width + j) * channels;
         
+        if ((index < 0) or (index + 2 >= data.size()))
+        {
+            std::cout << "getValue out of bounds" << i << "," << j << std::endl;
+            return glm::vec3(0.0f); // Return black or some error color
+        }
+
         float r = data[index] * toFloat;
         float g = data[index + 1] * toFloat;
         float b = data[index + 2] * toFloat;
+
+        std::cout << "VALUE SAMPLED IS " << r << std::endl;
 
         return glm::vec3(r,g,b);
     }

@@ -3,7 +3,7 @@
 Requirements (fill instructions later)
 Download dataset in (path)
 
-all libs in makefile
+all libs in makefile!
 OpenGL (3?)
 GLAD framework (supposedly on external/)
 GLM
