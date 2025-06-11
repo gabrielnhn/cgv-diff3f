@@ -17,6 +17,9 @@
 #include "run_python.hpp"
 // #include "magma.hpp"
 
+#include <utility>
+	
+
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
@@ -261,14 +264,14 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   
-    GLFWwindow* window = glfwCreateWindow(width, height, "Diff3F Experiments", NULL, NULL);
-    if (window == NULL)
+    GLFWwindow* windowFirst = glfwCreateWindow(width, height, "Diff3F Window 1", NULL, NULL);
+    if (windowFirst == NULL)
     {
         std::cout << "Failed to create GLFW window..." << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(windowFirst);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -277,10 +280,10 @@ int main(int argc, char* argv[])
     }   
 
     glViewport(0, 0, width, height);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(windowFirst, framebuffer_size_callback);
 
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
+    glfwSetInputMode(windowFirst, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
     aspect_ratio = width/height;
     
     // PREPARE SHADERS
@@ -392,18 +395,18 @@ int main(int argc, char* argv[])
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
-    const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/4.off";
+    const std::string firstPath = "./SHREC_r/off_2/4.off";
     
-    std::cout << "READING: " << path << std::endl;
+    std::cout << "READING: " << firstPath << std::endl;
     
     // off_object = OffModel(path);
-    OffModel off_object(path);
+    OffModel firstObject(firstPath);
 
     // find model bounding box
     glm::vec3 bbMin( std::numeric_limits<float>::max());
     glm::vec3 bbMax(-std::numeric_limits<float>::max());
 
-    for (auto &v: off_object.vertices) {
+    for (auto &v: firstObject.vertices) {
         bbMin = glm::min(bbMin, v);
         bbMax = glm::max(bbMax, v);
     }
@@ -450,19 +453,19 @@ int main(int argc, char* argv[])
     // VBOs FOR VERTICES
     //pos
     glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
-    glBufferData(GL_ARRAY_BUFFER, off_object.vertices.size()*sizeof(glm::vec3), &off_object.vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, firstObject.vertices.size()*sizeof(glm::vec3), &firstObject.vertices[0], GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     glEnableVertexAttribArray(0);  
     //color
     glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
-    glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, firstObject.features.size()*sizeof(glm::vec3), &firstObject.features[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
     glEnableVertexAttribArray(1);  
 
 
     // EBO FOR FACES
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, off_object.faces.size()*sizeof(glm::ivec3), &off_object.faces[0], GL_STATIC_DRAW); 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, firstObject.faces.size()*sizeof(glm::ivec3), &firstObject.faces[0], GL_STATIC_DRAW); 
 
     glEnable(GL_DEPTH_TEST);
 
@@ -475,93 +478,114 @@ int main(int argc, char* argv[])
     assert(text_loaded);
 
     int loop_count = 0;
-    while(!glfwWindowShouldClose(window))
+    // std::pair<GLFWwindow*, GLFWwindow*> windows = {windowFirst, windowOther};  
+
+
+    GLFWwindow* windowOther = glfwCreateWindow(width, height, "Diff3F Window 2", NULL, windowFirst);
+    if (windowFirst == NULL)
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        processInput(window); // recompute camera position
-
-        glUseProgram(0);
-        glUseProgram(currentRenderProgram);
-
-        if (should_reset)
-        {
-            reset_features(&off_object);
-            should_reset = false;
-        }
-
-        // remake projection
-        projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
-        view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-        mvp = projection * view * model;
-        mv = view * model;
-
-        // set variable shader uniforms
-        int locationMVP = glGetUniformLocation(currentRenderProgram, "mvp");
-        glUniformMatrix4fv(locationMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-        
-        if (currentRenderProgram == DepthShaderProgram)
-            glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mv"), 1, GL_FALSE, glm::value_ptr(mv));
-        
-        int locationLight = glGetUniformLocation(currentRenderProgram, "light_pos");
-        glUniform3f(locationLight, camera.x, camera.y, camera.z);
-
-        glBindVertexArray(VAO);
-
-        // FOR POINT CLOUD
-        // glPointSize(10.0f);
-        // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
-
-        // FOR SURFACES
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES, off_object.faces.size()*3, GL_UNSIGNED_INT, 0);
-
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error after drawElements" << std::endl;
-            return 1;
-        }
-        
-        // render text
-        if (not should_save_next_frame)
-        {
-            int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-            assert(text_rendered);
-        }
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-
-        if (should_save_next_frame)
-        {
-            saveImage("./temp/depth.png", window, true);
-            should_save_next_frame = false;
-            unproject_image(
-                projection,
-                mv,
-                // "",
-                "./temp/depth.png",
-                // window,
-                &off_object, diag
-            );
-              
-            currentRenderProgram = PHONGShaderProgram;
-        }
-
-        
-
-        loop_count += 1;
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
-            return 1;
-        }
-       
+        std::cout << "Failed to create GLFW window..." << std::endl;
+        glfwTerminate();
+        return -1;
     }
 
-    glDeleteShader(DepthVertexShader);
-    glDeleteShader(DepthFragShader); 
-    glDeleteProgram(DepthShaderProgram);
-    // glDeleteShader(DepthGeometryShader); 
 
-    glDeleteShader(PHONGVertexShader);
+    std::vector<GLFWwindow*> windows = {windowFirst, windowOther};  
+
+    for (long unsigned int i = 0; i < windows.size(); i++)
+    {
+        GLFWwindow* window = windows[i];
+        glfwMakeContextCurrent(window);
+
+        
+        while(!glfwWindowShouldClose(window))
+        {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            processInput(window); // recompute camera position
+            
+            glUseProgram(0);
+            glUseProgram(currentRenderProgram);
+            
+            if (should_reset)
+            {
+                reset_features(&firstObject);
+                should_reset = false;
+            }
+            
+            // remake projection
+            projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
+            view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
+            mvp = projection * view * model;
+            mv = view * model;
+            
+            // set variable shader uniforms
+            int locationMVP = glGetUniformLocation(currentRenderProgram, "mvp");
+            glUniformMatrix4fv(locationMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            if (currentRenderProgram == DepthShaderProgram)
+            glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mv"), 1, GL_FALSE, glm::value_ptr(mv));
+            
+            int locationLight = glGetUniformLocation(currentRenderProgram, "light_pos");
+            glUniform3f(locationLight, camera.x, camera.y, camera.z);
+            
+            glBindVertexArray(VAO);
+            
+            // FOR POINT CLOUD
+            // glPointSize(10.0f);
+            // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
+            
+            // FOR SURFACES
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glDrawElements(GL_TRIANGLES, firstObject.faces.size()*3, GL_UNSIGNED_INT, 0);
+            
+            while ((err = glGetError()) != GL_NO_ERROR) {
+                std::cerr << "OpenGL error " << err << " after drawElements" << std::endl;
+                return 1;
+            }
+            
+            // render text
+            if (not should_save_next_frame)
+            {
+                int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                assert(text_rendered);
+            }
+            
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+            
+            if (should_save_next_frame)
+            {
+                saveImage("./temp/depth.png", window, true);
+                should_save_next_frame = false;
+                unproject_image(
+                    projection,
+                    mv,
+                    // "",
+                    "./temp/depth.png",
+                    // window,
+                    &firstObject, diag
+                );
+                
+                currentRenderProgram = PHONGShaderProgram;
+            }
+            
+            
+            
+            loop_count += 1;
+            while ((err = glGetError()) != GL_NO_ERROR) {
+                std::cerr << "OpenGL error: " << err << "at loop count " << loop_count << std::endl;
+                return 1;
+            }
+            
+        }
+    }
+        
+        glDeleteShader(DepthVertexShader);
+        glDeleteShader(DepthFragShader); 
+        glDeleteProgram(DepthShaderProgram);
+        // glDeleteShader(DepthGeometryShader); 
+        
+        glDeleteShader(PHONGVertexShader);
     glDeleteShader(PHONGFragShader); 
     glDeleteProgram(PHONGShaderProgram);
     glDeleteShader(PHONGGeometryShader);
