@@ -42,17 +42,17 @@ class myImage
 
         long unsigned int index = (long unsigned int)(i * width + j) * channels;
         
-        if ((index < 0) or (index + 2 >= data.size()))
-        {
-            std::cout << "getValue out of bounds" << i << "," << j << std::endl;
-            return glm::vec3(0.0f); // Return black or some error color
-        }
+        // if ((index < 0) or (index + 2 >= data.size()))
+        // {
+        //     std::cout << "getValue out of bounds" << i << "," << j << std::endl;
+        //     return glm::vec3(0.0f); // Return black or some error color
+        // }
 
         float r = data[index] * toFloat;
         float g = data[index + 1] * toFloat;
         float b = data[index + 2] * toFloat;
 
-        std::cout << "VALUE SAMPLED IS " << r << std::endl;
+        // std::cout << "VALUE SAMPLED IS " << r << std::endl;
 
         return glm::vec3(r,g,b);
     }
