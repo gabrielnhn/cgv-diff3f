@@ -1,4 +1,11 @@
-import transformers
-# ControlNet/models/control_sd15_depth.pth
-# https://huggingface.co/lllyasviel/ControlNet/blob/main/models/control_sd15_depth.pth
-model = transformers.load
+import sys
+# sys.path.append('../external')
+sys.path.insert(1, './external')
+sys.path.insert(1, './external/controlnet')
+
+# import os
+# a = os.listdir()
+# print(a)
+
+from controlnet.process_depth import process
+

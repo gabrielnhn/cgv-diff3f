@@ -1,0 +1,36 @@
+# https://github.com/lllyasviel/ControlNet/blob/main/environment.yaml
+name: control
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10.12
+  - pip
+  - cudatoolkit
+  - pytorch
+  - torchvision
+  - numpy
+  - pip:
+      - gradio
+      - albumentations
+      - opencv-contrib-python
+      - imageio
+      - imageio-ffmpeg
+      - pytorch-lightning
+      - omegaconf
+      - test-tube
+      - streamlit
+      - einops
+      - transformers
+      - webdataset
+      - kornia
+      - open_clip_torch
+      - invisible-watermark
+      - streamlit-drawable-canvas
+      - torchmetrics
+      - timm
+      - addict
+      - yapf
+      - prettytable
+      - safetensors
+      - basicsr
