@@ -330,7 +330,8 @@ int main(int argc, char* argv[])
     // PREPARE PHONG SHADER
     auto PHONGVertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
     auto PHONGGeometryShaderSource = ShaderSourceCode("shaders/geometry_shader_normal.glsl");
-    auto PHONGFragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+    // auto PHONGFragShaderSource = ShaderSourceCode("shaders/frag_shader_phong.glsl");
+    auto PHONGFragShaderSource = ShaderSourceCode("shaders/frag_shader_features.glsl");
    
     unsigned int PHONGVertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(PHONGVertexShader, 1, &PHONGVertexShaderSource.text, NULL);
