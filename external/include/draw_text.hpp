@@ -28,11 +28,11 @@ struct Character {
 std::map<char, Character> Characters;
 
 
-std::vector<unsigned int> textVertexShaders;
-std::vector<unsigned int> textFragShaders;
-std::vector<unsigned int> textPrograms;
-std::vector<unsigned int> textVAOs;
-std::vector<unsigned int> textVBOs;
+std::vector<unsigned int> textVertexShaders = {0, 0};
+std::vector<unsigned int> textFragShaders = {0, 0};
+std::vector<unsigned int> textPrograms = {0, 0};
+std::vector<unsigned int> textVAOs = {0, 0};
+std::vector<unsigned int> textVBOs = {0, 0};
 
 
 int textSetup(int windowIndex)

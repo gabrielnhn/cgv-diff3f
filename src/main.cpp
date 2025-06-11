@@ -61,11 +61,11 @@ std::vector<glm::vec3>cameras = {default_camera, default_camera};
 std::vector<float> heights = {800, 800};
 std::vector<float> widths = {800, 800};
 
-std::vector<glm::mat4> mvps;
-std::vector<glm::mat4> mvs;
-std::vector<glm::mat4> models;
-std::vector<glm::mat4> views;
-std::vector<glm::mat4> projections;
+std::vector<glm::mat4> mvps = {glm::mat4(1.0), glm::mat4(1.0)};
+std::vector<glm::mat4> mvs = {glm::mat4(1.0), glm::mat4(1.0)};
+std::vector<glm::mat4> models = {glm::mat4(1.0), glm::mat4(1.0)};
+std::vector<glm::mat4> views = {glm::mat4(1.0), glm::mat4(1.0)};
+std::vector<glm::mat4> projections = {glm::mat4(1.0), glm::mat4(1.0)};
 
 std::vector<float> aspect_ratios = {widths[0]/heights[0], widths[1]/heights[1]};
 
@@ -73,17 +73,17 @@ std::vector<float> aspect_ratios = {widths[0]/heights[0], widths[1]/heights[1]};
 std::vector<bool> should_save_next_frame = {false, false};
 std::vector<bool> should_reset = {false, false};
 
-std::vector<unsigned int> DepthShaderPrograms;
-std::vector<unsigned int> PHONGShaderPrograms;
-std::vector<unsigned int> currentRenderPrograms;
-std::vector<unsigned int> VBOPos;
-std::vector<unsigned int> VBOColors;
+std::vector<unsigned int> DepthShaderPrograms = {0,0};
+std::vector<unsigned int> PHONGShaderPrograms = {0,0};
+std::vector<unsigned int> currentRenderPrograms = {0,0};
+std::vector<unsigned int> VBOPos = {0,0};
+std::vector<unsigned int> VBOColors = {0,0};
 
 std::map<GLFWwindow*, int> windowToIndex;
 std::map<int,GLFWwindow*> indexToWindow;
 
-std::vector<unsigned int> VAOs;
-std::vector<unsigned int> EBOs;
+std::vector<unsigned int> VAOs = {0,0};
+std::vector<unsigned int> EBOs = {0,0};
 
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
@@ -455,7 +455,7 @@ int main(int argc, char* argv[])
     std::cout << "READING: " << otherPath << std::endl;
     OffModel otherObject(firstPath);
     
-    std::vector<float> diags;
+    std::vector<float> diags = {0,0};
     
 
     std::vector<OffModel> objects = {firstObject, otherObject};
