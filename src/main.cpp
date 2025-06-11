@@ -152,21 +152,25 @@ void processInput(GLFWwindow *window)
 
 int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     std::string feature_image_path, std::string depth_image_path,
-    GLFWwindow* window, OffModel* off_object)
+    GLFWwindow* window, OffModel* off_object, float diag)
 {
     myImage depth_image(depth_image_path);
 
     glfwGetCursorPos(window, &mousex, &mousey);
     float x_feat = mousex;
     // float y_feat = mousey;
-    float y_feat = height - 1 - mousey;
+    float y_feat = mousey;
 
     float image_value = depth_image.getValue(int(y_feat), int(x_feat)).r;
-    // float depth = (1-image_value);
+    float depth = (image_value);
     // image_value = 0.70 + (vertexShade/farPlaneDistance)
-    float depth = -(image_value - 0.70) * farDistance;
+    // float depth = -(image_value - 0.70) * farDistance;
 
-    glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
+    // glm::vec3 unproj_coord = glm::vec3(x_feat, y_feat, depth);
+    glm::vec3 unproj_coord = glm::vec3(x_feat, height - y_feat, depth);
+
+
+
     std::cout << "unproj: " << unproj_coord.x << ", " << unproj_coord.y << ", " << unproj_coord.z << std::endl; 
     glm::vec4 viewport_rect = glm::vec4(0.0f, 0.0f, width, height);
 
@@ -184,15 +188,17 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     for (long unsigned int i = 1; i < off_object->vertices.size(); i++)
     {
         float this_distance = glm::distance(world_point, off_object->vertices[i]);
-        if (this_distance < closest_distance)
+        // if (this_distance < closest_distance)
+        if (this_distance < diag*0.02)
         {
             closest_point_index = i;
             closest_distance = this_distance;
+            off_object->features[i] = glm::vec3(1.0, 0.0, 0.0);
         }
     }
     // auto closest_point = off_object->vertices[closest_point_index];
-    std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
-    off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
+    // std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
+    // off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
 
     return 1;
 }
@@ -471,10 +477,10 @@ int main()
 
         if (should_save_next_frame)
         {
-            saveImage("./bruh.png", window, false);
+            saveImage("./bruh.png", window, true);
             should_save_next_frame = false;
             unproject_image(projection, mv, "", "./bruh.png",
-                window, &off_object);
+                window, &off_object, diag);
             //color
             glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
             glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
