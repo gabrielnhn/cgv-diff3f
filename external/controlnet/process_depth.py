@@ -3,7 +3,7 @@
 # https://huggingface.co/lllyasviel/ControlNet/blob/main/models/control_sd15_depth.pth
 # model = transformers.load
 
-from controlnet.share import *
+# from controlnet.share import *
 import controlnet.config as config
 
 import cv2

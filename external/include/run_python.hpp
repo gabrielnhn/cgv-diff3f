@@ -22,6 +22,16 @@ int run_python(int argc, char* argv[], std::string path)
         return 0;
     }
 
+    const char* conda_prefix = getenv("CONDA_PREFIX");
+    if (conda_prefix && *conda_prefix)
+        PyConfig_SetBytesString(&config, &config.home, conda_prefix);
+    if (PyStatus_Exception(status))
+    {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+        return 0;
+    }
+
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status))
     {

@@ -7,7 +7,7 @@ dependencies:
   - python=3.10.12
   - pip
   - cudatoolkit
-  - pytorch
+  - pytorch-gpu
   - torchvision
   - numpy
   - pip:
@@ -34,3 +34,4 @@ dependencies:
       - prettytable
       - safetensors
       - basicsr
+      - pyparsing
