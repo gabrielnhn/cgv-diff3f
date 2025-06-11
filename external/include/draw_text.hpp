@@ -28,12 +28,16 @@ struct Character {
 std::map<char, Character> Characters;
 
 
-unsigned int textVertexShader, textFragShader, textProgram;
-unsigned int textVAO, textVBO;
+std::vector<unsigned int> textVertexShaders;
+std::vector<unsigned int> textFragShaders;
+std::vector<unsigned int> textPrograms;
+std::vector<unsigned int> textVAOs;
+std::vector<unsigned int> textVBOs;
 
 
-int textSetup()
+int textSetup(int windowIndex)
 {    
+    int i = windowIndex;
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
     std::cerr << "OpenGL error before textSetup: " << err << std::endl;
@@ -107,34 +111,34 @@ int textSetup()
     auto textVertexSource = ShaderSourceCode("./external/shaders/text_vertex.glsl");
     auto textFragSource = ShaderSourceCode("./external/shaders/text_frag.glsl");
 
-    textVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(textVertexShader, 1, &textVertexSource.text, NULL);
-    glCompileShader(textVertexShader);
-    glGetShaderiv(textVertexShader, GL_COMPILE_STATUS, &success);
+    textVertexShaders[i] = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(textVertexShaders[i], 1, &textVertexSource.text, NULL);
+    glCompileShader(textVertexShaders[i]);
+    glGetShaderiv(textVertexShaders[i], GL_COMPILE_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(textVertexShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(textVertexShaders[i], 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
         return 0;
     }
 
-    textFragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(textFragShader, 1, &textFragSource.text, NULL);
-    glCompileShader(textFragShader);
-    glGetShaderiv(textFragShader, GL_COMPILE_STATUS, &success);
+    textFragShaders[i] = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(textFragShaders[i], 1, &textFragSource.text, NULL);
+    glCompileShader(textFragShaders[i]);
+    glGetShaderiv(textFragShaders[i], GL_COMPILE_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(textFragShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(textFragShaders[i], 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
         return 0;
     }
     //
-    textProgram = glCreateProgram();
-    glAttachShader(textProgram, textVertexShader);
-    glAttachShader(textProgram, textFragShader);
-    glLinkProgram(textProgram);
+    textPrograms[i] = glCreateProgram();
+    glAttachShader(textPrograms[i], textVertexShaders[i]);
+    glAttachShader(textPrograms[i], textFragShaders[i]);
+    glLinkProgram(textPrograms[i]);
 
-    glGetProgramiv(textProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(textPrograms[i], GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(textProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(textPrograms[i], 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::FULLTEXTPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
     }
 
@@ -144,19 +148,19 @@ int textSetup()
     double height = 800;
     double width = 800;
     // Update text projection matrix
-    glUseProgram(textProgram); // Activate text shader to set its uniform
+    glUseProgram(textPrograms[i]); // Activate text shader to set its uniform
     glm::mat4 textProjection = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
-    int projectionLocation = glGetUniformLocation(textProgram, "projection");
+    int projectionLocation = glGetUniformLocation(textPrograms[i], "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
     glUseProgram(0); // Deactivate text shader
     // glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 800.0f);
     // int projectionLocation = glGetUniformLocation(textProgram, "projection");
     // glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glGenVertexArrays(1, &textVAO);
-    glGenBuffers(1, &textVBO);
-    glBindVertexArray(textVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glGenVertexArrays(1, &textVAOs[i]);
+    glGenBuffers(1, &textVBOs[i]);
+    glBindVertexArray(textVAOs[i]);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBOs[i]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -178,19 +182,20 @@ void textFinish()
     FT_Done_FreeType(ft);
 }
     
-int RenderText(std::string text, float x, float y, float scale, glm::vec3 color)
+int RenderText(int windowIndex, std::string text, float x, float y, float scale, glm::vec3 color)
 {
+    int i = windowIndex;
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error before RenderText: " << err << std::endl;
         return 0;
     }
     // activate corresponding render state	
-    glUseProgram(textProgram);
+    glUseProgram(textPrograms[i]);
 
-    glUniform3f(glGetUniformLocation(textProgram, "textColor"), color.x, color.y, color.z);
+    glUniform3f(glGetUniformLocation(textPrograms[i], "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(textVAO);
+    glBindVertexArray(textVAOs[i]);
 
     // iterate through all characters
     std::string::const_iterator c;
@@ -216,7 +221,7 @@ int RenderText(std::string text, float x, float y, float scale, glm::vec3 color)
         // render glyph texture over quad
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
         // update content of VBO memory
-        glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, textVBOs[i]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         // render quad

@@ -99,9 +99,9 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     std::cout << aspect_ratios[i] << std::endl;
 
     // Update text projection matrix
-    glUseProgram(textProgram);
+    glUseProgram(textPrograms[i]);
     glm::mat4 textProjection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
-    int projectionLocation = glGetUniformLocation(textProgram, "projection");
+    int projectionLocation = glGetUniformLocation(textPrograms[i], "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
     glUseProgram(0);
 }  
@@ -535,7 +535,7 @@ int main(int argc, char* argv[])
         glClearColor(0.0f,0.0f,0.0f,0.0f);
         
         
-        int text_loaded = textSetup();
+        int text_loaded = textSetup(i);
         assert(text_loaded);
     }
 
@@ -555,40 +555,40 @@ int main(int argc, char* argv[])
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             processInput(window); // recompute camera position
             
-            glUseProgram(currentRenderProgram);
+            glUseProgram(currentRenderPrograms[i]);
             
-            if (should_reset)
+            if (should_reset[i])
             {
-                reset_features(&firstObject);
-                should_reset = false;
+                reset_features(&objects[i], i);
+                should_reset[i] = false;
             }
             
             // remake projection
-            projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
-            view = glm::lookAt(camera, aim, glm::vec3(0, 1, 0));
-            mvp = projection * view * model;
-            mv = view * model;
+            projections[i] = glm::perspective(fov, aspect_ratios[i], nearDistance, farDistance);
+            views[i] = glm::lookAt(cameras[i], aim, glm::vec3(0, 1, 0));
+            mvps[i] = projections[i] * views[i] * models[i];
+            mvs[i] = views[i] * models[i];
             
             // set variable shader uniforms
-            int locationMVP = glGetUniformLocation(currentRenderProgram, "mvp");
-            glUniformMatrix4fv(locationMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+            int locationMVP = glGetUniformLocation(currentRenderPrograms[i], "mvp");
+            glUniformMatrix4fv(locationMVP, 1, GL_FALSE, glm::value_ptr(mvps[i]));
             
-            if (currentRenderProgram == DepthShaderProgram)
-            glUniformMatrix4fv(glGetUniformLocation(currentRenderProgram, "mv"), 1, GL_FALSE, glm::value_ptr(mv));
+            if (currentRenderPrograms[i] == DepthShaderPrograms[i])
+            glUniformMatrix4fv(glGetUniformLocation(currentRenderPrograms[i], "mv"), 1, GL_FALSE, glm::value_ptr(mvs[i]));
             
-            int locationLight = glGetUniformLocation(currentRenderProgram, "light_pos");
-            glUniform3f(locationLight, camera.x, camera.y, camera.z);
+            int locationLight = glGetUniformLocation(currentRenderPrograms[i], "light_pos");
+            glUniform3f(locationLight, cameras[i].x, cameras[i].y, cameras[i].z);
             
-            glBindVertexArray(VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
-            glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+            glBindVertexArray(VAOs[i]);
+            glBindBuffer(GL_ARRAY_BUFFER, VBOPos[i]);  
+            glBindBuffer(GL_ARRAY_BUFFER, VBOColors[i]);  
             
             // FOR POINT CLOUD
             // glPointSize(10.0f);
             // glDrawArrays(GL_POINTS, 0, off_object.vertices.size());
             
             // FOR SURFACES
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
             glDrawElements(GL_TRIANGLES, firstObject.faces.size()*3, GL_UNSIGNED_INT, 0);
             
             while ((err = glGetError()) != GL_NO_ERROR) {
@@ -597,29 +597,29 @@ int main(int argc, char* argv[])
             }
             
             // render text
-            if (not should_save_next_frame)
+            if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText("Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                int text_rendered = RenderText(i, "Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
             }
             
             glfwSwapBuffers(window);
             glfwPollEvents();
             
-            if (should_save_next_frame)
+            if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
-                should_save_next_frame = false;
+                should_save_next_frame[i] = false;
                 unproject_image(
-                    projection,
-                    mv,
+                    projections[i],
+                    mvs[i],
                     // "",
                     "./temp/depth.png",
-                    // window,
-                    &firstObject, diag
+                    window,
+                    &objects[i], diags[i]
                 );
                 
-                currentRenderProgram = PHONGShaderProgram;
+                currentRenderPrograms[i] = PHONGShaderPrograms[i];
             }
             
             
@@ -633,15 +633,13 @@ int main(int argc, char* argv[])
         }
     }
         
-        glDeleteShader(DepthVertexShader);
-        glDeleteShader(DepthFragShader); 
-        glDeleteProgram(DepthShaderProgram);
-        // glDeleteShader(DepthGeometryShader); 
-        
-        glDeleteShader(PHONGVertexShader);
-    glDeleteShader(PHONGFragShader); 
-    glDeleteProgram(PHONGShaderProgram);
-    glDeleteShader(PHONGGeometryShader);
+    // glDeleteShader(DepthVertexShaders);
+    // glDeleteShader(DepthFragShaders); 
+    // glDeleteProgram(DepthShaderPrograms[0]); 
+    // glDeleteShader(PHONGVertexShaders[0]);
+    // glDeleteShader(PHONGFragShaders[0]); 
+    // glDeleteProgram(PHONGShaderPrograms[0]);
+    // glDeleteShader(PHONGGeometryShaders[0]);
     
     textFinish();
 
