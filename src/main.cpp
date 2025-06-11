@@ -526,9 +526,9 @@ int main(int argc, char* argv[])
 
         if (should_save_next_frame)
         {
-            saveImage("./bruh.png", window, true);
+            saveImage("./temp/depth.png", window, true);
             should_save_next_frame = false;
-            unproject_image(projection, mv, "", "./bruh.png",
+            unproject_image(projection, mv, "", "./temp/depth.png",
                 window, &off_object, diag);
             //color
             // glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  

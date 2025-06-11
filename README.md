@@ -12,3 +12,5 @@ OpenMP
 libstb
 libfreetype6-dev
 libpython3.10
+
+# https://huggingface.co/lllyasviel/ControlNet/resolve/main/models/control_sd15_depth.pth?download=true
