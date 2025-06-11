@@ -14,6 +14,7 @@
 #include "save_image.hpp"
 #include "load_image.hpp"
 #include "draw_text.hpp"
+#include "run_python.hpp"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -201,8 +202,10 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     return 1;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    run_python(argc, argv, "./src/diffusion.py");
+
     GLenum err;
 
     // PREPARE WINDOW

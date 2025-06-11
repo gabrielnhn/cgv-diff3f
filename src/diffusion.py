@@ -1,0 +1,1 @@
+print("Tua mae esquartejada")

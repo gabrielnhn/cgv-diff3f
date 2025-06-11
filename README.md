@@ -11,3 +11,4 @@ g++, C++23
 OpenMP
 libstb
 libfreetype6-dev
+libpython3.10
