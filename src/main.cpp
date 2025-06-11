@@ -20,7 +20,8 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-float max_distance_to_object = 1.5;
+// float max_distance_to_object = 1.5;
+float max_distance_to_object = 2.0;
 auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto camera = default_camera;
 auto aim = glm::vec3(0.0f);
@@ -185,7 +186,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float depthBuf = depth_image.getValue(height - ndc.y,ndc.x).r;
         float projDepth = ndc.z;
 
-        if (projDepth < depthBuf + 0.01)
+        // if (projDepth < depthBuf + 0.01)
+        if (projDepth < depthBuf + 0.003)
         {
             off_object->hits[i] += 1;
             float weight = 1.0f / off_object->hits[i];
