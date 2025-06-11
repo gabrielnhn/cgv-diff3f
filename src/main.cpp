@@ -39,15 +39,31 @@ double mousex_last, mousey_last;
 int last_mouse_event = GLFW_RELEASE;
 float sensitivity = 10.0f;
 
-double height = 800;
-double width = 800;
+float height = 800;
+float width = 800;
 
 float speed = 0.05f;
 
-glm::mat4 mvp;
-glm::mat4 mv;
+// for 1 window
+// glm::mat4 mvp;
+// glm::mat4 mv;
 
-float aspect_ratio = width/height;
+// float aspect_ratio = width/height;
+
+// // image saving stuff
+// bool should_save_next_frame = false;
+// bool should_reset = false;
+
+// unsigned int DepthShaderProgram;
+// unsigned int PHONGShaderProgram;
+// unsigned int currentRenderProgram = 0;
+
+// unsigned int VBOPos, VBOColor;
+
+std::vector<glm::mat4> mvps;
+std::vector<glm::mat4> mvs;
+
+std::vector<float> aspect_ratios = {width/height, width/height};
 
 // image saving stuff
 bool should_save_next_frame = false;
@@ -60,6 +76,10 @@ unsigned int currentRenderProgram = 0;
 unsigned int VBOPos, VBOColor;
 
 
+int currentWindowIndex = 0;
+
+
+
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     (void)window; // avoid warning
@@ -67,9 +87,9 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     height = h;
     glViewport(0, 0, width, height);
     std::cout << "CHANGED WINDOW SIZE to w,h" << w << ", " << h << std::endl;
-    std::cout << aspect_ratio << std::endl;
-    aspect_ratio = width/height;
-    std::cout << aspect_ratio << std::endl;
+    std::cout << aspect_ratios[currentWindowIndex] << std::endl;
+    aspect_ratios[currentWindowIndex] = width/height;
+    std::cout << aspect_ratios[currentWindowIndex] << std::endl;
 
     // Update text projection matrix
     glUseProgram(textProgram); // Activate text shader to set its uniform
@@ -77,7 +97,6 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     int projectionLocation = glGetUniformLocation(textProgram, "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
     glUseProgram(0); // Deactivate text shader
-
 }  
 
 int updateModelVBO(OffModel* off_object)
@@ -482,28 +501,31 @@ int main(int argc, char* argv[])
 
 
     GLFWwindow* windowOther = glfwCreateWindow(width, height, "Diff3F Window 2", NULL, windowFirst);
-    if (windowFirst == NULL)
+    if (windowOther == NULL)
     {
         std::cout << "Failed to create GLFW window..." << std::endl;
         glfwTerminate();
         return -1;
     }
+    glfwSetFramebufferSizeCallback(windowOther, framebuffer_size_callback);
 
 
     std::vector<GLFWwindow*> windows = {windowFirst, windowOther};  
 
-    for (long unsigned int i = 0; i < windows.size(); i++)
+    // while(true)
+    while(not glfwWindowShouldClose(windowFirst))
     {
-        GLFWwindow* window = windows[i];
-        glfwMakeContextCurrent(window);
-
-        
-        while(!glfwWindowShouldClose(window))
+        for (long unsigned int i = 0; i < windows.size(); i++)
         {
+            GLFWwindow* window = windows[i];
+            glfwMakeContextCurrent(window);
+
+           
+        // while(!glfwWindowShouldClose(window))
+        // {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             processInput(window); // recompute camera position
             
-            glUseProgram(0);
             glUseProgram(currentRenderProgram);
             
             if (should_reset)
@@ -529,6 +551,8 @@ int main(int argc, char* argv[])
             glUniform3f(locationLight, camera.x, camera.y, camera.z);
             
             glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBOPos);  
+            glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
             
             // FOR POINT CLOUD
             // glPointSize(10.0f);
