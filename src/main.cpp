@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
     std::cout << "READING: " << firstPath << std::endl;
     OffModel firstObject(firstPath);
     std::cout << "READING: " << otherPath << std::endl;
-    OffModel otherObject(firstPath);
+    OffModel otherObject(otherPath);
     
     std::vector<float> diags = {0,0};
     
@@ -462,6 +462,8 @@ int main(int argc, char* argv[])
 
     for(unsigned long int i = 0; i < objects.size(); i++)
     {
+        glfwMakeContextCurrent(windows[i]);
+
         // off_object = OffModel(path);
         // find model bounding box
         glm::vec3 bbMin( std::numeric_limits<float>::max());
@@ -589,7 +591,8 @@ int main(int argc, char* argv[])
             
             // FOR SURFACES
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
-            glDrawElements(GL_TRIANGLES, firstObject.faces.size()*3, GL_UNSIGNED_INT, 0);
+            // glDrawElements(GL_TRIANGLES, firstObject.faces.size()*3, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, objects[i].faces.size()*3, GL_UNSIGNED_INT, 0);
             
             while ((err = glGetError()) != GL_NO_ERROR) {
                 std::cerr << "OpenGL error " << err << " after drawElements" << std::endl;
