@@ -35,7 +35,7 @@ auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
 double mousex_last, mousey_last;
-int last_mouse_event = GLFW_RELEASE;
+// int last_mouse_event = GLFW_RELEASE;
 float sensitivity = 10.0f;
 
 float speed = 0.05f;
@@ -85,6 +85,8 @@ std::map<int,GLFWwindow*> indexToWindow;
 std::vector<unsigned int> VAOs = {0,0};
 std::vector<unsigned int> EBOs = {0,0};
 std::vector<GLFWwindow*> windows = {NULL, NULL};  
+
+std::vector<int> last_mouse_events = {GLFW_RELEASE, GLFW_RELEASE};
 
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
@@ -199,15 +201,15 @@ void processInput(GLFWwindow *window)
     glfwGetCursorPos(window, &mousex, &mousey);
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-        last_mouse_event = 0;
+        last_mouse_events[i] = 0;
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        if (last_mouse_event == 0)
+        if (last_mouse_events[i] == 0)
         {
             mousex_last = mousex;
             mousey_last = mousey;
-            last_mouse_event = 1;           
+            last_mouse_events[i] = 1;           
         }
         else
         {   
@@ -252,7 +254,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float small_noise = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         small_noise = small_noise / 10.0;
 
-        glm::vec3 ndc = glm::project(off_object->vertices[i],
+        glm::vec3 ndc = glm::project(off_object->vertices[k],
                                     current_mv,
                                     current_projection,
                                     viewport);
@@ -548,7 +550,7 @@ int main(int argc, char* argv[])
     int loop_count = 0;   
 
     // while(true)
-    while(not glfwWindowShouldClose(windowFirst))
+    while((not glfwWindowShouldClose(windowFirst)) and (not glfwWindowShouldClose(windowOther)))
     {
         for (long unsigned int i = 0; i < windows.size(); i++)
         {
