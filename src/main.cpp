@@ -110,6 +110,7 @@ void processInput(GLFWwindow *window)
         or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
     {
         should_save_next_frame = true;
+        currentRenderProgram = DepthShaderProgram;
     }
 
 
@@ -489,6 +490,7 @@ int main(int argc, char* argv[])
             glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
             glEnableVertexAttribArray(1);  
+            currentRenderProgram = PHONGShaderProgram;
         }
 
         loop_count += 1;
