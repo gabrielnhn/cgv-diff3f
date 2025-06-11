@@ -47,10 +47,14 @@ float aspect_ratio = width/height;
 
 // image saving stuff
 bool should_save_next_frame = false;
+bool should_reset = false;
 
 unsigned int DepthShaderProgram;
 unsigned int PHONGShaderProgram;
 unsigned int currentRenderProgram = 0;
+
+unsigned int VBOPos, VBOColor;
+
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
@@ -70,6 +74,34 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     glUseProgram(0); // Deactivate text shader
 
 }  
+
+int updateModelVBO(OffModel* off_object)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+    glBufferData(GL_ARRAY_BUFFER, off_object->features.size()*sizeof(glm::vec3), &off_object->features[0], GL_DYNAMIC_DRAW);
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+    // glEnableVertexAttribArray(1); 
+    // PREPARE SHADERS
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error in updateModelVBO()" << err << std::endl;
+        return 0;
+    }
+    return 1;
+}
+
+
+void reset_features(OffModel* off_object)
+{
+    #pragma omp parallel for
+    for(long unsigned int i = 0; i < off_object->features.size(); i++)
+    {
+        off_object->features[i] = off_object->default_feature;
+        off_object->hits[i] = 0;
+    }
+    updateModelVBO(off_object);
+}
+
 
 // move camera position according to keyboard and stuff
 void processInput(GLFWwindow *window)
@@ -103,8 +135,12 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         camera -= speed * forward;
 
+    // if(glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+    {
         camera = default_camera;
+        should_reset = true;
+    }
     
     if((glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
         or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
@@ -162,6 +198,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 {
     float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
     myImage depth_image(depth_image_path);
 
@@ -171,7 +208,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     glm::vec4 viewport(0, 0, width, height);
     
     #pragma omp parallel for
-    for (std::size_t i = 0; i < off_object->vertices.size(); ++i)
+    for (unsigned long int i = 0; i < off_object->vertices.size(); ++i)
     {
         float small_noise = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         small_noise = small_noise / 10.0;
@@ -193,7 +230,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
             off_object->hits[i] += 1;
             float weight = 1.0f / off_object->hits[i];
             auto prev_value = off_object->features[i] * (1.0f - weight);
-            auto new_value = glm::vec3(0.0f, random_float1+small_noise, random_float2+small_noise) * weight;
+            auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
             off_object->features[i] = prev_value + new_value;
         }
     }
@@ -201,6 +238,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // auto closest_point = off_object->vertices[closest_point_index];
     // std::cout << "CLOSES INDEX IS " << closest_point_index << std::endl;
     // off_object->features[closest_point_index] = glm::vec3(1.0, 0.0, 0.0);
+    updateModelVBO(off_object);
 
     return 1;
 }
@@ -351,6 +389,7 @@ int main(int argc, char* argv[])
     
     std::cout << "READING: " << path << std::endl;
     
+    // off_object = OffModel(path);
     OffModel off_object(path);
 
     // find model bounding box
@@ -391,7 +430,6 @@ int main(int argc, char* argv[])
    
 
     // buffer model data to gpu
-    unsigned int VBOPos, VBOColor;
     glGenBuffers(1, &VBOPos);
     glGenBuffers(1, &VBOColor);
 
@@ -437,6 +475,12 @@ int main(int argc, char* argv[])
 
         glUseProgram(0);
         glUseProgram(currentRenderProgram);
+
+        if (should_reset)
+        {
+            reset_features(&off_object);
+            should_reset = false;
+        }
 
         // remake projection
         projection = glm::perspective(fov, aspect_ratio, nearDistance, farDistance);
@@ -486,12 +530,14 @@ int main(int argc, char* argv[])
             unproject_image(projection, mv, "", "./bruh.png",
                 window, &off_object, diag);
             //color
-            glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
-            glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
-            glEnableVertexAttribArray(1);  
+            // glBindBuffer(GL_ARRAY_BUFFER, VBOColor);  
+            // glBufferData(GL_ARRAY_BUFFER, off_object.features.size()*sizeof(glm::vec3), &off_object.features[0], GL_DYNAMIC_DRAW);
+            // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+            // glEnableVertexAttribArray(1);  
             currentRenderProgram = PHONGShaderProgram;
         }
+
+        
 
         loop_count += 1;
         while ((err = glGetError()) != GL_NO_ERROR) {

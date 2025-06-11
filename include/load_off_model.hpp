@@ -14,7 +14,15 @@ class OffModel {
 	std::vector<glm::vec3> features;
 	std::vector<int> hits;
 	std::vector<glm::ivec3> faces;
-	
+	glm::vec3 default_feature = glm::vec3(0.2);
+
+
+	OffModel()
+	{
+
+	}
+
+
 	// https://en.wikipedia.org/wiki/OFF_(file_format)
 	OffModel(std::string path)
 	{
@@ -59,7 +67,7 @@ class OffModel {
 			
 			// important for later
 			// features.push_back(glm::vec3(1.0));
-			features.push_back(glm::vec3(0.1));
+			features.push_back(default_feature);
 			hits.push_back(0);
 		}
 
