@@ -11,6 +11,8 @@
 // #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 #include <stb/stb_image.h>
+#include "magma.hpp"
+// #include <algorithm>
 
 class myImage
 {
@@ -18,6 +20,9 @@ class myImage
     
     int width, height, channels;
     std::vector<unsigned char> data;
+    float toFloat = 1.0f / 255.0f;
+    float fromFloat = 255.0f;
+    float minVal, maxVal;
 
 
     myImage(std::string path)
@@ -33,28 +38,53 @@ class myImage
         // data = image_buffer;
         data = std::move(image_buffer);
         stbi_image_free(imdata);
+
+        maxVal = data[0];
+        #pragma omp parallel for reduction(max: maxVal)
+        for(long unsigned int i = 1; i < data.size(); i++)
+        {
+            float value = data[i];   
+            maxVal = std::max(maxVal, value);
+        }
+        minVal = maxVal;
+        #pragma omp parallel for reduction(min: minVal)
+        for(long unsigned int i = 0; i < data.size(); i++)
+        {
+            float value = data[i];   
+            if(value > 10)
+                minVal = std::min(minVal, value);
+        }
+        // std::cout << "minVal is " << minVal << " and maxVal " << maxVal << std::endl;
     }
 
     glm::vec3 getValue(int i, int j)
     {
-        // float toFloat = 1.0f;
-        float toFloat = 1.0f / 255.0f;
-
         long unsigned int index = (long unsigned int)(i * width + j) * channels;
-        
-        // if ((index < 0) or (index + 2 >= data.size()))
-        // {
-        //     std::cout << "getValue out of bounds" << i << "," << j << std::endl;
-        //     return glm::vec3(0.0f); // Return black or some error color
-        // }
 
         float r = data[index] * toFloat;
         float g = data[index + 1] * toFloat;
         float b = data[index + 2] * toFloat;
 
-        // std::cout << "VALUE SAMPLED IS " << r << std::endl;
-
         return glm::vec3(r,g,b);
+    }
+
+    glm::vec3 toMagma(int i, int j)
+    {
+        long unsigned int index = (long unsigned int)(i * width + j) * channels;
+        int unscaled = data[index];
+
+        if (maxVal == minVal)
+            return magma[unscaled];
+
+        float scaled = ((unscaled - minVal) / (maxVal - minVal));
+        // std::cout << "unscaled " << unscaled << std::endl;
+        // std::cout << "scaled " << scaled << std::endl;
+
+        index = scaled * fromFloat;
+
+        index = std::clamp((int)index, 0, 255);
+        // reverse (closer == smaller value)
+        return magma[255-index];
     }
 };
 

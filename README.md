@@ -13,6 +13,8 @@ libstb
 libfreetype6-dev
 libpython3.10
 
+sudo apt-get install xtensor-dev
+
 # https://huggingface.co/lllyasviel/ControlNet/resolve/main/models/control_sd15_depth.pth?download=true
 conda env create -f environment.yaml
 conda activate control

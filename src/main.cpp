@@ -15,6 +15,7 @@
 #include "load_image.hpp"
 #include "draw_text.hpp"
 #include "run_python.hpp"
+// #include "magma.hpp"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -222,6 +223,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
 
         float depthBuf = depth_image.getValue(height - ndc.y,ndc.x).r;
+        glm::vec3 magma = depth_image.toMagma(height - ndc.y, ndc.x);
         float projDepth = ndc.z;
 
         // if (projDepth < depthBuf + 0.01)
@@ -230,7 +232,10 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
             off_object->hits[i] += 1;
             float weight = 1.0f / off_object->hits[i];
             auto prev_value = off_object->features[i] * (1.0f - weight);
-            auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
+            // auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
+            auto new_value = magma * weight;
+            
+            
             off_object->features[i] = prev_value + new_value;
         }
     }
