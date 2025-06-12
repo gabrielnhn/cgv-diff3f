@@ -11,7 +11,8 @@
 // #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 #include <stb/stb_image.h>
-#include "magma.hpp"
+// #include "magma.hpp"
+#include "colormaps.hpp"
 // #include <algorithm>
 
 class myImage
