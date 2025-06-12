@@ -23,3 +23,5 @@ conda activate control
 https://learn.microsoft.com/en-us/nuget/install-nuget-client-tools?tabs=macos#cli-tools
 cd external
 nuget install Axodox.MachineLearning
+
+libopencv-dev

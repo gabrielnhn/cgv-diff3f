@@ -17,7 +17,7 @@
 #include "draw_text.hpp"
 #include "run_python.hpp"
 
-// #include "magma.hpp"
+#include "features.hpp"
 
 	
 
@@ -244,7 +244,7 @@ void processInput(GLFWwindow *window)
 }
 
 int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
-    // std::string feature_image_path,
+    std::string feature_image_path,
     std::string depth_image_path,
     GLFWwindow* window,
     OffModel* off_object, float diag)
@@ -255,6 +255,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
     myImage depth_image(depth_image_path);
+    myImage lbp_image(feature_image_path);
 
     // glfwGetCursorPos(window, &mousex, &mousey);
     // float x_feat = mousex;
@@ -276,7 +277,12 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
 
         float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
-        glm::vec3 magma = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
+        // glm::vec3 magma = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
+        // glm::vec3 feature = magma;
+        glm::vec3 lbp = lbp_image.getValue(heights[i] - ndc.y, ndc.x);
+        glm::vec3 feature = lbp;
+        
+
         float projDepth = ndc.z;
 
         // if (projDepth < depthBuf + 0.01)
@@ -287,7 +293,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
             float weight = 1.0f / off_object->hits[k];
             auto prev_value = off_object->features[k] * (1.0f - weight);
             // auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
-            auto new_value = magma * weight;
+            auto new_value = feature * weight;
             
             
             off_object->features[k] = prev_value + new_value;
@@ -363,6 +369,9 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
     // run_python(argc, argv, "./src/diffusion.py");
+
+    // feature();
+    // return 0;
 
     GLenum err;
 
@@ -467,7 +476,6 @@ int main(int argc, char* argv[])
             std::cerr << "OpenGL error after depth shader: " << std::endl;
             return 1;
         }
-        
         
         // PREPARE PHONG SHADER
         auto PHONGVertexShaderSource = ShaderSourceCode("shaders/vertex_shader_mvp.glsl");
@@ -716,11 +724,12 @@ int main(int argc, char* argv[])
             if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
+                feature();
                 should_save_next_frame[i] = false;
                 unproject_image(
                     projections[i],
                     mvs[i],
-                    // "",
+                    "./temp/lbp.png",
                     "./temp/depth.png",
                     window,
                     &objects[i], diags[i]
