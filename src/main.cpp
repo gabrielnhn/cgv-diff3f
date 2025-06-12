@@ -304,6 +304,7 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     GLFWwindow* window,
     OffModel* off_object, float diag)
 {
+    (void)diag;
     int i = windowToIndex[window];
     myImage depth_image(depth_image_path);
 
@@ -335,12 +336,13 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
         // std::cout << "ndc.z " << ndc.z << std::endl;
         if (dist < minDist)
         {
-            dist = minDist;
+            minDist = dist;
             minIndex = k;
         }
     }
     // std::cout << "FOUND POINT " << ndc.x << ", " << ndc.y << ", " << ndc.z << ", " << std::endl;
     // off_object->features[k];
+    // std::cout << "reference Point has index " << minIndex << std::endl;
     glfwMakeContextCurrent(indexToWindow[1-i]);
     glUseProgram(PHONGShaderPrograms[1-i]);
     glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
@@ -409,9 +411,7 @@ int main(int argc, char* argv[])
 
     windows = {windowFirst, windowOther};  
 
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after viridis texture " << err << std::endl;
-    }
+    
 
     // PREPARE SHADERS (2 shader programs per window = 4)
     for(unsigned long int i = 0; i < windows.size(); i++)
@@ -516,17 +516,20 @@ int main(int argc, char* argv[])
 
         // prepare viridis
         // Generate texture
-        GLuint viridisTex;
-        glGenTextures(1, &viridisTex);
-        glBindTexture(GL_TEXTURE_1D, viridisTex);
-        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, (GLsizei)viridis.size(), 0, GL_RGB, GL_FLOAT, viridis.data());
+        GLuint colorMapTex;
+        glGenTextures(1, &colorMapTex);
+        glBindTexture(GL_TEXTURE_1D, colorMapTex);
+        //choose colormap
+        // glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, (GLsizei)viridis.size(), 0, GL_RGB, GL_FLOAT, viridis.data());
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, (GLsizei)redblue.size(), 0, GL_RGB, GL_FLOAT, redblue.data());
+        
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_1D, 0);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_1D, viridisTex);
-        glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "viridisMap"), 0);
+        glBindTexture(GL_TEXTURE_1D, colorMapTex);
+        glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "colorMap"), 0);
         
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error after PHONG shader: " << std::endl;
