@@ -510,9 +510,9 @@ int main(int argc, char* argv[])
             glGetProgramInfoLog(PHONGShaderPrograms[i], 512, NULL, infoLog);
             std::cerr << "ERROR::SHADER::FULLSHADERPROGRAM::LINK_FAILED\n" << infoLog << std::endl;
         }
+        glfwMakeContextCurrent(windows[i]);
         glUseProgram(PHONGShaderPrograms[i]);
         glEnable(GL_PROGRAM_POINT_SIZE);
-
 
         // prepare viridis
         // Generate texture

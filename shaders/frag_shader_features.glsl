@@ -16,7 +16,6 @@ void main()
         // FragColor = vec4(vec3(similarity/2.0), 1.0);
         vec3 color = texture(viridisMap, similarity).rgb;
         FragColor = vec4(color, 1.0);
-
     }
     else
     {
