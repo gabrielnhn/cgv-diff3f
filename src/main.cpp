@@ -72,6 +72,7 @@ std::vector<float> aspect_ratios = {widths[0]/heights[0], widths[1]/heights[1]};
 // image saving stuff
 std::vector<bool> should_save_next_frame = {false, false};
 std::vector<bool> should_reset = {false, false};
+std::vector<bool> should_compute_similarity = {false, false};
 
 std::vector<unsigned int> DepthShaderPrograms = {0,0};
 std::vector<unsigned int> PHONGShaderPrograms = {0,0};
@@ -187,6 +188,13 @@ void processInput(GLFWwindow *window)
         currentRenderPrograms[i] = DepthShaderPrograms[i];
     }
 
+    if((glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS))
+    {
+        should_compute_similarity[i] = true;
+        currentRenderPrograms[i] = DepthShaderPrograms[i];
+    }
+
 
     if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
     {
@@ -285,6 +293,59 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
     return 1;
 }
+
+int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
+    // std::string feature_image_path,
+    std::string depth_image_path,
+    GLFWwindow* window,
+    OffModel* off_object, float diag)
+{
+    int i = windowToIndex[window];
+    myImage depth_image(depth_image_path);
+
+    glfwGetCursorPos(window, &mousex, &mousey);
+    float x_feat = mousex;
+    float y_feat = mousey;
+    glm::vec4 viewport(0, 0, widths[i], heights[i]);
+    
+    // auto target = glm::vec3(x_feat, y_feat, depthBuf);
+    float depthBuf = depth_image.getValue(heights[i] - y_feat, x_feat).r;
+    auto target = glm::vec3(x_feat, heights[i] - y_feat, depthBuf);
+
+    // #pragma omp parallel for
+    std::cout << "LOOKING FOR POINT " << std::endl;
+    for (unsigned long int k = 0; k < off_object->vertices.size(); k++)
+    {
+
+        glm::vec3 ndc = glm::project(off_object->vertices[k],
+                                    current_mv,
+                                    current_projection,
+                                    viewport);
+ 
+        float dist = glm::distance(ndc, target);
+        // std::cout << "dist " << dist << std::endl;
+        // std::cout << "depthBuf " << depthBuf << std::endl;
+        // std::cout << "ndc.z " << ndc.z << std::endl;
+        if (dist < 5.0)
+        {
+            std::cout << "FOUND POINT " << ndc.x << ", " << ndc.y << ", " << ndc.z << ", " << std::endl;
+            // off_object->features[k];
+            glfwMakeContextCurrent(indexToWindow[1-i]);
+            glUseProgram(PHONGShaderPrograms[1-i]);
+            glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
+            glUniform3f(glGetUniformLocation(PHONGShaderPrograms[1-i], "referenceValue"), off_object->features[k].x, off_object->features[k].y, off_object->features[k].z); 
+            
+            glfwMakeContextCurrent(indexToWindow[i]);
+            glUseProgram(currentRenderPrograms[i]);
+            break;
+        }
+    }
+    
+    // updateModelVBO(off_object, i);
+
+    return 1;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -506,6 +567,7 @@ int main(int argc, char* argv[])
         // glUniform1f(glGetUniformLocation(PHONGShaderProgram, "farPlaneDistance"), farDistance);
         // glUniform3f(glGetUniformLocation(PHONGShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
         glUniform3f(glGetUniformLocation(PHONGShaderPrograms[i], "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+        glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
         
         
         // buffer model data to gpu
@@ -631,6 +693,19 @@ int main(int argc, char* argv[])
                 currentRenderPrograms[i] = PHONGShaderPrograms[i];
             }
             
+            if (should_compute_similarity[i])
+            {
+                should_compute_similarity[i] = 0;
+                similarity_setup(
+                    projections[i],
+                    mvs[i],
+                    // "",
+                    "./temp/depth.png",
+                    window,
+                    &objects[i], diags[i]
+                );
+                currentRenderPrograms[i] = PHONGShaderPrograms[i];
+            }
             
             
             loop_count += 1;
