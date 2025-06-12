@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp> 
+#include <utility>
 
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
@@ -15,9 +16,9 @@
 #include "load_image.hpp"
 #include "draw_text.hpp"
 #include "run_python.hpp"
+
 // #include "magma.hpp"
 
-#include <utility>
 	
 
 #ifndef M_PI
@@ -359,7 +360,9 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
 
 int main(int argc, char* argv[])
 {
-    run_python(argc, argv, "./src/diffusion.py");
+    (void)argc;
+    (void)argv;
+    // run_python(argc, argv, "./src/diffusion.py");
 
     GLenum err;
 

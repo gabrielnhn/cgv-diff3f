@@ -18,3 +18,8 @@ sudo apt-get install xtensor-dev
 # https://huggingface.co/lllyasviel/ControlNet/resolve/main/models/control_sd15_depth.pth?download=true
 conda env create -f environment.yaml
 conda activate control
+
+#sudo apt install mono-devel
+https://learn.microsoft.com/en-us/nuget/install-nuget-client-tools?tabs=macos#cli-tools
+cd external
+nuget install Axodox.MachineLearning
