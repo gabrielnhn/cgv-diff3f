@@ -12,7 +12,7 @@ void main()
     if (shouldComputeSimilarity > 0)
     {
         float similarity = dot(fragColor, referenceValue) / (length(fragColor)*length(referenceValue));
-        FragColor = vec4(vec3(similarity), 1.0);
+        FragColor = vec4(vec3(similarity/2.0), 1.0);
     }
     else
     {

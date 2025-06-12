@@ -181,32 +181,36 @@ void processInput(GLFWwindow *window)
         should_reset[i] = true;
     }
     
-    if((glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
-        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
-    {
-        should_save_next_frame[i] = true;
-        currentRenderPrograms[i] = DepthShaderPrograms[i];
-    }
-
-    if((glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS))
-    {
-        should_compute_similarity[i] = true;
-        currentRenderPrograms[i] = DepthShaderPrograms[i];
-    }
-
-
-    if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-    {
-        currentRenderPrograms[i] = PHONGShaderPrograms[i];
-    }
-    if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-    {
-        currentRenderPrograms[i] = DepthShaderPrograms[i];
-    }
-
-    //mouse
     glfwGetCursorPos(window, &mousex, &mousey);
+    // only if mouse within window
+
+    if (((0 <= mousex) and (mousex <= widths[i]))
+        and ((0 <= mousey) and (mousey <= heights[i])))
+    {   
+        if((glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
+        {
+            should_save_next_frame[i] = true;
+            currentRenderPrograms[i] = DepthShaderPrograms[i];
+        }
+        
+        if((glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        or (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS))
+        {
+            should_compute_similarity[i] = true;
+            currentRenderPrograms[i] = DepthShaderPrograms[i];
+        }
+    }
+
+    // if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    // {
+    //     currentRenderPrograms[i] = PHONGShaderPrograms[i];
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+    // {
+    //     currentRenderPrograms[i] = DepthShaderPrograms[i];
+    // }
+
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
         last_mouse_events[i] = 0;
@@ -312,8 +316,11 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     float depthBuf = depth_image.getValue(heights[i] - y_feat, x_feat).r;
     auto target = glm::vec3(x_feat, heights[i] - y_feat, depthBuf);
 
-    // #pragma omp parallel for
-    std::cout << "LOOKING FOR POINT " << std::endl;
+    int minIndex = -1;
+    float minDist = 99999.0f;
+ 
+    // std::cout << "LOOKING FOR POINT " << std::endl;
+    // #pragma omp parallel for reduction (min: minDist)
     for (unsigned long int k = 0; k < off_object->vertices.size(); k++)
     {
 
@@ -326,21 +333,22 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
         // std::cout << "dist " << dist << std::endl;
         // std::cout << "depthBuf " << depthBuf << std::endl;
         // std::cout << "ndc.z " << ndc.z << std::endl;
-        if (dist < 5.0)
+        if (dist < minDist)
         {
-            std::cout << "FOUND POINT " << ndc.x << ", " << ndc.y << ", " << ndc.z << ", " << std::endl;
-            // off_object->features[k];
-            glfwMakeContextCurrent(indexToWindow[1-i]);
-            glUseProgram(PHONGShaderPrograms[1-i]);
-            glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
-            glUniform3f(glGetUniformLocation(PHONGShaderPrograms[1-i], "referenceValue"), off_object->features[k].x, off_object->features[k].y, off_object->features[k].z); 
-            
-            glfwMakeContextCurrent(indexToWindow[i]);
-            glUseProgram(currentRenderPrograms[i]);
-            break;
+            dist = minDist;
+            minIndex = k;
         }
     }
+    // std::cout << "FOUND POINT " << ndc.x << ", " << ndc.y << ", " << ndc.z << ", " << std::endl;
+    // off_object->features[k];
+    glfwMakeContextCurrent(indexToWindow[1-i]);
+    glUseProgram(PHONGShaderPrograms[1-i]);
+    glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
+    glUniform3f(glGetUniformLocation(PHONGShaderPrograms[1-i], "referenceValue"), off_object->features[minIndex].x, off_object->features[minIndex].y, off_object->features[minIndex].z); 
     
+    glfwMakeContextCurrent(indexToWindow[i]);
+    glUseProgram(currentRenderPrograms[i]);
+            // break;
     // updateModelVBO(off_object, i);
 
     return 1;
@@ -672,6 +680,9 @@ int main(int argc, char* argv[])
             {
                 int text_rendered = RenderText(i, "Press [Enter] to generate texture", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
+
+                glUseProgram(PHONGShaderPrograms[i]);
+                glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
             }
             
             glfwSwapBuffers(window);
