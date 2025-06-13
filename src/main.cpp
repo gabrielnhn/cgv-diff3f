@@ -90,6 +90,8 @@ std::vector<GLFWwindow*> windows = {NULL, NULL};
 
 std::vector<int> last_mouse_events = {GLFW_RELEASE, GLFW_RELEASE};
 
+int currentFeatureComputer = 0;
+
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
@@ -203,14 +205,16 @@ void processInput(GLFWwindow *window)
         }
     }
 
-    // if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-    // {
-    //     currentRenderPrograms[i] = PHONGShaderPrograms[i];
-    // }
-    // if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-    // {
-    //     currentRenderPrograms[i] = DepthShaderPrograms[i];
-    // }
+    if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    {
+        // currentRenderPrograms[i] = PHONGShaderPrograms[i];
+        currentFeatureComputer = 1;
+    }
+    if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+    {
+        // currentRenderPrograms[i] = DepthShaderPrograms[i];
+        currentFeatureComputer = 2;
+    }
 
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
@@ -255,7 +259,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     // float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
     myImage depth_image(depth_image_path);
-    myImage lbp_image(feature_image_path);
+    myImage feature_image(feature_image_path);
 
     // glfwGetCursorPos(window, &mousex, &mousey);
     // float x_feat = mousex;
@@ -279,7 +283,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
         // glm::vec3 magma = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
         // glm::vec3 feature = magma;
-        glm::vec3 lbp = lbp_image.getValue(heights[i] - ndc.y, ndc.x);
+        glm::vec3 lbp = feature_image.getValue(heights[i] - ndc.y, ndc.x);
         glm::vec3 feature = lbp;
         
 
@@ -724,7 +728,7 @@ int main(int argc, char* argv[])
             if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
-                feature();
+                feature(currentFeatureComputer);
                 should_save_next_frame[i] = false;
                 unproject_image(
                     projections[i],

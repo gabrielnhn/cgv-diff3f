@@ -56,7 +56,7 @@ class myImage
             if(value > 10)
                 minVal = std::min(minVal, value);
         }
-        std::cout << path << " minVal is " << minVal << " and maxVal " << maxVal << std::endl;
+        // std::cout << path << " minVal is " << minVal << " and maxVal " << maxVal << std::endl;
     }
 
     glm::vec3 getValue(int i, int j)
