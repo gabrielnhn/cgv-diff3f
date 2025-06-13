@@ -222,6 +222,11 @@ void processInput(GLFWwindow *window)
         // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 3;
     }
+    if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+    {
+        // currentRenderPrograms[i] = DepthShaderPrograms[i];
+        currentFeatureComputer = 4;
+    }
 
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)

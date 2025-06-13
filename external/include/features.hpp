@@ -42,36 +42,36 @@ cv::Mat erode(cv::Mat image)
     return erodedImage;
 }
 
-// Create a 10x10 circular kernel (values: 1 inside circle, 0 outside)
-cv::Mat createCircularKernel(int size = 10) {
-    // cv::Mat kernel = cv::Mat::zeros(size, size, CV_32F);
-    cv::Mat kernel = cv::Mat::ones(size, size, CV_32F) * -1;
-    cv::Point center(size / 2, size / 2);
-    float radius = size / 2.0f;
+// // Create a 10x10 circular kernel (values: 1 inside circle, 0 outside)
+// cv::Mat createCircularKernel(int size = 10) {
+//     // cv::Mat kernel = cv::Mat::zeros(size, size, CV_32F);
+//     cv::Mat kernel = cv::Mat::ones(size, size, CV_32F) * -1;
+//     cv::Point center(size / 2, size / 2);
+//     float radius = size / 2.0f;
 
-    for (int y = 0; y < size; ++y)
-        for (int x = 0; x < size; ++x)
-            if (cv::norm(cv::Point(x, y) - center) <= radius)
-                kernel.at<float>(y, x) = 1.0f;
+//     for (int y = 0; y < size; ++y)
+//         for (int x = 0; x < size; ++x)
+//             if (cv::norm(cv::Point(x, y) - center) <= radius)
+//                 kernel.at<float>(y, x) = 1.0f;
 
-    // Normalize so max value doesn't exceed 1 when summing
-    kernel /= cv::sum(kernel)[0];
-    return kernel;
-}
+//     // Normalize so max value doesn't exceed 1 when summing
+//     kernel /= cv::sum(kernel)[0];
+//     return kernel;
+// }
 
-cv::Mat convolveWithCircularKernel(const cv::Mat& image) {
-    cv::Mat imageFloat;
-    image.convertTo(imageFloat, CV_32F, 1.0 / 255.0);
+// cv::Mat convolveWithCircularKernel(const cv::Mat& image) {
+//     cv::Mat imageFloat;
+//     image.convertTo(imageFloat, CV_32F, 1.0 / 255.0);
 
-    cv::Mat kernel = createCircularKernel(100);
-    cv::Mat result;
-    cv::filter2D(imageFloat, result, -1, kernel);
+//     cv::Mat kernel = createCircularKernel(100);
+//     cv::Mat result;
+//     cv::filter2D(imageFloat, result, -1, kernel);
 
-    // Convert back to 8-bit for saving
-    cv::Mat output;
-    result.convertTo(output, CV_8U, 255.0);
-    return output;
-}
+//     // Convert back to 8-bit for saving
+//     cv::Mat output;
+//     result.convertTo(output, CV_8U, 255.0);
+//     return output;
+// }
 
 
 int feature(int option) {
@@ -91,8 +91,8 @@ int feature(int option) {
         dst = erode(image);
     else if (option == 2)
         dst = lbp(image);
-    else if (option == 4)
-        dst = convolveWithCircularKernel(image);
+    // else if (option == 4)
+    //     dst = convolveWithCircularKernel(image);
     // Show the LBP image
     // cv::imshow("LBP Image", dst);
     cv::imwrite("./temp/feature.png", dst);
