@@ -90,7 +90,7 @@ std::vector<GLFWwindow*> windows = {NULL, NULL};
 
 std::vector<int> last_mouse_events = {GLFW_RELEASE, GLFW_RELEASE};
 
-int currentFeatureComputer = 0;
+int currentFeatureComputer = 1;
 
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
@@ -180,8 +180,10 @@ void processInput(GLFWwindow *window)
     // if(glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
     {
-        cameras[i] = default_camera;
-        should_reset[i] = true;
+        cameras[0] = default_camera;
+        should_reset[0] = true;
+        cameras[1] = default_camera;
+        should_reset[1] = true;
     }
     
     glfwGetCursorPos(window, &mousex, &mousey);
@@ -214,6 +216,11 @@ void processInput(GLFWwindow *window)
     {
         // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 2;
+    }
+    if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+    {
+        // currentRenderPrograms[i] = DepthShaderPrograms[i];
+        currentFeatureComputer = 3;
     }
 
    
@@ -280,11 +287,17 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
         if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
 
+        glm::vec3 feature;
         float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
-        // glm::vec3 magma = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
-        // glm::vec3 feature = magma;
-        glm::vec3 lbp = feature_image.getValue(heights[i] - ndc.y, ndc.x);
-        glm::vec3 feature = lbp;
+        
+        if (currentFeatureComputer == 3)
+            feature = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
+        
+        else
+        {
+            feature = feature_image.getValue(heights[i] - ndc.y, ndc.x);
+
+        }
         
 
         float projDepth = ndc.z;
@@ -733,7 +746,7 @@ int main(int argc, char* argv[])
                 unproject_image(
                     projections[i],
                     mvs[i],
-                    "./temp/lbp.png",
+                    "./temp/feature.png",
                     "./temp/depth.png",
                     window,
                     &objects[i], diags[i]
