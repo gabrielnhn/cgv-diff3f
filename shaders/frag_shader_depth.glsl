@@ -5,10 +5,17 @@ in float vertexShade;
 
 uniform float farPlaneDistance;  // Model-View-Projection matrix
 
+uniform vec3 comparedPoint;
+uniform int shouldComputeSimilarity;
 
 void main()
 {
-    // FragColor = vec4(vec3(0.70 + (vertexShade/farPlaneDistance)), 1.0);
-    // FragColor = vec4(vec3(1-gl_FragCoord.z), 1.0);
-    FragColor = vec4(vec3(gl_FragCoord.z),1.0);
+    if ((shouldComputeSimilarity > 0) && (distance(comparedPoint, gl_FragCoord.xyz) < 10.1))
+    {
+        FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 1.0);
+    }
+    else
+    {
+        FragColor = vec4(vec3(gl_FragCoord.z),1.0);
+    }
 }

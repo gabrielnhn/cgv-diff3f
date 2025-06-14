@@ -348,6 +348,7 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
 
     int minIndex = -1;
     float minDist = 99999.0f;
+    glm::vec3 minNdc;
  
     // std::cout << "LOOKING FOR POINT " << std::endl;
     // #pragma omp parallel for reduction (min: minDist)
@@ -367,6 +368,7 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
         {
             minDist = dist;
             minIndex = k;
+            minNdc = ndc;
         }
     }
     // std::cout << "FOUND POINT " << ndc.x << ", " << ndc.y << ", " << ndc.z << ", " << std::endl;
@@ -377,10 +379,19 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
     glUniform3f(glGetUniformLocation(PHONGShaderPrograms[1-i], "referenceValue"), off_object->features[minIndex].x, off_object->features[minIndex].y, off_object->features[minIndex].z); 
     
+    
+    // set origin vertex as ref in depth shader for i
     glfwMakeContextCurrent(indexToWindow[i]);
-    glUseProgram(currentRenderPrograms[i]);
-            // break;
-    // updateModelVBO(off_object, i);
+    glUseProgram(DepthShaderPrograms[i]);
+    glUniform1i(glGetUniformLocation(DepthShaderPrograms[i], "shouldComputeSimilarity"), 1); 
+    glUniform3f(glGetUniformLocation(DepthShaderPrograms[i], "comparedPoint"), minNdc.x, minNdc.y, minNdc.z); 
+
+
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after sim setup: " << err << std::endl;
+        exit(-1);
+    }
 
     return 1;
 }
