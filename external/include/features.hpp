@@ -84,7 +84,7 @@ int feature(int option) {
 
     cv::Mat dst;
     
-    if (option == 2)
+    if (option == 3)
         return 0;
     
     if (option == 1)
