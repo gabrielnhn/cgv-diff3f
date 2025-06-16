@@ -1,6 +1,9 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
+#include "run_python.hpp"
+
+
 cv::Mat lbp(cv::Mat image)
 {
     // Compute LBP images
@@ -74,7 +77,17 @@ cv::Mat erode(cv::Mat image)
 // }
 
 
-int feature(int option) {
+int feature(int argc, char**argv, int option) {
+    
+    
+    if(option == 4)
+    {
+        run_python(argc, argv, "./external/src/dino.py");
+        return 1;
+    }
+    
+    
+    
     // Load the image
     cv::Mat image = cv::imread("temp/depth.png", cv::IMREAD_GRAYSCALE);
     if (image.empty()) {
@@ -82,20 +95,22 @@ int feature(int option) {
         return 0;
     }
 
-    cv::Mat dst;
-    
     if (option == 3)
-        return 0;
+    return 0;
     
+    cv::Mat dst;
     if (option == 1)
         dst = erode(image);
     else if (option == 2)
         dst = lbp(image);
+    
+    
+    
+    cv::imwrite("./temp/feature.png", dst);
     // else if (option == 4)
     //     dst = convolveWithCircularKernel(image);
     // Show the LBP image
     // cv::imshow("LBP Image", dst);
-    cv::imwrite("./temp/feature.png", dst);
     // cv::waitKey(0);
 
     return 1;

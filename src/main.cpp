@@ -15,7 +15,7 @@
 #include "save_image.hpp"
 #include "load_image.hpp"
 #include "draw_text.hpp"
-#include "run_python.hpp"
+// #include "run_python.hpp"
 
 #include "features.hpp"
 
@@ -227,6 +227,11 @@ void processInput(GLFWwindow *window)
         // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 4;
     }
+    // if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+    // {
+    //     // currentRenderPrograms[i] = DepthShaderPrograms[i];
+    //     currentFeatureComputer = 5;
+    // }
 
    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
@@ -757,7 +762,7 @@ int main(int argc, char* argv[])
             if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
-                feature(currentFeatureComputer);
+                feature(argc, argv, currentFeatureComputer);
                 should_save_next_frame[i] = false;
                 unproject_image(
                     projections[i],
