@@ -110,7 +110,13 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     glm::mat4 textProjection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
     int projectionLocation = glGetUniformLocation(textPrograms[i], "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
-    glUseProgram(0);
+
+     // prepare mvp matrices
+    // projections[i] = glm::perspective(fov, aspect_ratios[i], nearDistance, farDistance);
+    // views[i] = glm::lookAt(cameras[i], aim, glm::vec3(0, 1, 0));
+    // mvps[i] = projections[i] * views[i] * models[i];
+    // mvs[i] = views[i] * models[i];
+    // glUseProgram(0);
 }  
 
 int updateModelVBO(OffModel* off_object, int windowIndex)
@@ -421,6 +427,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
   
     GLFWwindow* windowFirst = glfwCreateWindow(widths[0], heights[0], "Diff3F Window 1", NULL, NULL);
     if (windowFirst == NULL)
@@ -752,7 +759,9 @@ int main(int argc, char* argv[])
             // render text
             if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText(i, "[Mouse RClick] to get features; [Mouse M.Bttn to compare similarity; 1,2,3 to change computing method", 25.0f, 25.0f, 0.3f, glm::vec3(0.5, 0.8f, 0.2f));
+                int text_rendered = RenderText(i, "[Mouse RClick] to get features | [Mouse M.Bttn] to compare similarity", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                assert(text_rendered);
+                text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 0.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
 
                 glUseProgram(PHONGShaderPrograms[i]);

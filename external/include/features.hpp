@@ -87,7 +87,6 @@ int DINO = 2;
 
 int feature(int argc, char**argv, int option) {
     
-    
     if(option == DINO)
     {
         run_python("./external/src/dino.py");
