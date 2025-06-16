@@ -911,10 +911,10 @@ int main(int argc, char* argv[])
             }
             else if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText(i, "[Mouse RClick]: Get features | [Mouse M.Button]: Compare similarity", 25.0f, 20.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                text_rendered = RenderText(i, "[R]: Reset           |               [Mouse LClick]: Hold to drag model", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                text_rendered = RenderText(i, "[KeybLeft <= or KeybRight =>]: Change dataset instance", 25.0f, 740.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                int text_rendered = RenderText(i, "[Mouse RClick]: Get features [Mouse Middle Click]: Compare similarity", 25.0f, 20.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[R]: Reset                           [Mouse LClick]: Hold to drag model", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[1, 2, 3]: Change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[KeybLeft <= or KeybRight =>]: Previous/Next model (" + std::to_string(objects[i].datasetIndex) + ")", 25.0f, 740.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 710.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
                 // assert(text_rendered);
