@@ -80,8 +80,8 @@ cv::Mat erode(cv::Mat image)
 // std::map<int,std::string> featureIndexToString = {
 //     "", "Depth (Magma)", "DINO", "LBP"};
 int LBP = 3;
-int DEPTHMAGMA = 1;
-int DINO = 2;
+int DEPTHMAGMA = 2;
+int DINO = 1;
 
 std::map<int,std::string> featureIndexToString;
 
