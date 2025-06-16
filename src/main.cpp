@@ -222,11 +222,11 @@ void processInput(GLFWwindow *window)
         // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 3;
     }
-    if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
-    {
-        // currentRenderPrograms[i] = DepthShaderPrograms[i];
-        currentFeatureComputer = 4;
-    }
+    // if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+    // {
+    //     // currentRenderPrograms[i] = DepthShaderPrograms[i];
+    //     currentFeatureComputer = 4;
+    // }
     // if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
     // {
     //     // currentRenderPrograms[i] = DepthShaderPrograms[i];
@@ -300,13 +300,12 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         glm::vec3 feature;
         float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
         
-        if (currentFeatureComputer == 3)
+        if (currentFeatureComputer == DEPTHMAGMA)
             feature = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
         
         else
         {
             feature = feature_image.getValue(heights[i] - ndc.y, ndc.x);
-
         }
         
 
@@ -597,8 +596,8 @@ int main(int argc, char* argv[])
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
     // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
-    const std::string firstPath = "./SHREC_r/off_2/4.off";
-    const std::string otherPath = "./SHREC_r/off_2/5.off";
+    const std::string firstPath = "./external/SHREC_r/off_2/4.off";
+    const std::string otherPath = "./external/SHREC_r/off_2/5.off";
     
     std::cout << "READING: " << firstPath << std::endl;
     OffModel firstObject(firstPath);
@@ -753,7 +752,7 @@ int main(int argc, char* argv[])
             // render text
             if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText(i, "Right click to get features; Mouse middle button to compare similarity!", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                int text_rendered = RenderText(i, "[Mouse RClick] to get features; [Mouse M.Bttn to compare similarity; 1,2,3 to change computing method", 25.0f, 25.0f, 0.3f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
 
                 glUseProgram(PHONGShaderPrograms[i]);

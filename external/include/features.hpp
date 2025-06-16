@@ -76,11 +76,19 @@ cv::Mat erode(cv::Mat image)
 //     return output;
 // }
 
+#include <utility>
+// std::map<int,std::string> featureIndexToString = {
+//     "", "Depth (Magma)", "DINO", "LBP"};
+int LBP = 3;
+int DEPTHMAGMA = 1;
+int DINO = 2;
+
+
 
 int feature(int argc, char**argv, int option) {
     
     
-    if(option == 4)
+    if(option == DINO)
     {
         run_python("./external/src/dino.py");
         return 1;
@@ -93,14 +101,12 @@ int feature(int argc, char**argv, int option) {
         return 0;
     }
 
-    if (option == 3)
+    if (option == DEPTHMAGMA)
         // depth magma
         return 0;
     
     cv::Mat dst;
-    if (option == 1)
-        dst = erode(image);
-    else if (option == 2)
+    if (option == LBP)
         dst = lbp(image);
     
     
