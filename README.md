@@ -28,3 +28,4 @@ libopencv-dev
 
 conda env create -f environment.yml
 conda activate diff3df
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH

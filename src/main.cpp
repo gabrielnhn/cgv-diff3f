@@ -410,15 +410,26 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     return 1;
 }
 
+bool can_use_python = true;
 
 int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;
-    // run_python(argc, argv, "./src/diffusion.py");
-    if (not init_python(argc, argv))
+
+    std::string myargs = *argv;
+    if (myargs.find("--nopython") != std::string::npos)
     {
-        std::cout << "Python wasnt initialized correctly. Don't use DINO!" << std::endl;
+        can_use_python = false;
+        std::cout << "NOT using Python. Don't use DINO!";
+    }
+
+
+    // run_python(argc, argv, "./src/diffusion.py");
+    if ((can_use_python) and (not init_python(argc, argv)))
+    {
+        std::cout << "Python wasnt initialized correctly." << std::endl;
+        return 1;
     }
 
     featureIndexToString[DINO] = "DINO";

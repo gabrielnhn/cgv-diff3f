@@ -28,8 +28,9 @@ MYLIBS = \
 MYPARAMS= -std=c++23 -g -Wall -Wextra
 
 LDFLAGS += -Wl,-rpath,$(CONDA_PREFIX)/lib
+LD_LIBRARY_PATH =+ $(CONDA_PREFIX)/lib:
 
 all: 
-	g++ src/main.cpp external/src/glad.c $(MYINC) $(MYPARAMS) $(MYLIBS)  $(LDFLAGS)
-
+	g++ src/main.cpp external/src/glad.c $(MYINC) $(MYPARAMS) $(MYLIBS) $(LDFLAGS)
+    export LD_LIBRARY_PATH
 
