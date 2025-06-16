@@ -407,6 +407,10 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
     // run_python(argc, argv, "./src/diffusion.py");
+    if (not init_python(argc, argv))
+    {
+        std::cout << "Python wasnt initialized correctly. Don't use DINO!" << std::endl;
+    }
 
     // feature();
     // return 0;
@@ -809,6 +813,7 @@ int main(int argc, char* argv[])
     // glDeleteShader(PHONGGeometryShaders[0]);
     
     textFinish();
+    finish_python();
 
     return 0;
 }

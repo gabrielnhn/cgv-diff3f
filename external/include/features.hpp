@@ -82,7 +82,8 @@ int feature(int argc, char**argv, int option) {
     
     if(option == 4)
     {
-        run_python(argc, argv, "./external/src/dino.py");
+        // run_python(argc, argv, "./external/src/dino.py");
+        run_python("./external/src/dino.py");
         return 1;
     }
     
