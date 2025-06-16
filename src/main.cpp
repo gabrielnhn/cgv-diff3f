@@ -211,7 +211,16 @@ void processInput(GLFWwindow *window)
             should_compute_similarity[i] = true;
             currentRenderPrograms[i] = DepthShaderPrograms[i];
         }
+        else
+            should_compute_similarity[i] = false;
+
     }
+    else
+    {
+        should_compute_similarity[i] = false;
+    }
+
+
 
     if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
     {
@@ -780,13 +789,17 @@ int main(int argc, char* argv[])
             }
             
             // render text
-            if (not should_save_next_frame[i])
+            if (should_compute_similarity[i] or should_compute_similarity[1-i])
+            {
+                RenderText(i, "Red: Positive similarity. | Blue: Negative similarity", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+            }
+            else if (not should_save_next_frame[i])
             {
                 int text_rendered = RenderText(i, "[Mouse RClick]: Get features | [Mouse M.Button]: Compare similarity", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "[R]: Reset", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 750.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                // assert(text_rendered);
+                assert(text_rendered);
                 // assert(text_rendered);
 
                 glUseProgram(PHONGShaderPrograms[i]);
@@ -815,7 +828,7 @@ int main(int argc, char* argv[])
             
             if (should_compute_similarity[i])
             {
-                should_compute_similarity[i] = 0;
+                // should_compute_similarity[i] = 0;
                 similarity_setup(
                     projections[i],
                     mvs[i],
