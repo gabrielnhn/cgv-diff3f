@@ -25,7 +25,7 @@ MYLIBS = \
     -lpython3.12 \
     -fopenmp -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lstb -lfreetype
 	
-MYPARAMS= -std=c++23 -g
+MYPARAMS= -std=c++23 -g -Wall -Wextra
 
 LDFLAGS += -Wl,-rpath,$(CONDA_PREFIX)/lib
 

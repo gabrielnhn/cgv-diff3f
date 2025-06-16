@@ -317,9 +317,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
         float projDepth = ndc.z;
 
-        // if (projDepth < depthBuf + 0.01)
-        // if (projDepth < depthBuf + 0.003)
-        if (projDepth < depthBuf + diag*0.002)
+        // if (projDepth < depthBuf + diag*0.002)
+        if (projDepth < depthBuf + diag*0.01)
         {
             off_object->hits[k] += 1;
             float weight = 1.0f / off_object->hits[k];
@@ -344,6 +343,9 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     OffModel* off_object, float diag)
 {
     (void)diag;
+    float ZFACTOR = 5.0;
+    // float ZFACTOR = 0.1;
+
     int i = windowToIndex[window];
     myImage depth_image(depth_image_path);
 
@@ -354,7 +356,7 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     
     // auto target = glm::vec3(x_feat, y_feat, depthBuf);
     float depthBuf = depth_image.getValue(heights[i] - y_feat, x_feat).r;
-    auto target = glm::vec3(x_feat, heights[i] - y_feat, depthBuf);
+    auto target = glm::vec3(x_feat, heights[i] - y_feat, depthBuf * ZFACTOR);
 
     int minIndex = -1;
     float minDist = 99999.0f;
@@ -370,11 +372,13 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
                                     current_projection,
                                     viewport);
  
+        ndc.z = ndc.z * ZFACTOR;
         float dist = glm::distance(ndc, target);
         // std::cout << "dist " << dist << std::endl;
         // std::cout << "depthBuf " << depthBuf << std::endl;
         // std::cout << "ndc.z " << ndc.z << std::endl;
-        if (dist < minDist)
+        // if ((dist < minDist) and (ndc.z <= target.z + diag*0.005))
+        if ((dist < minDist))
         {
             minDist = dist;
             minIndex = k;
@@ -417,6 +421,9 @@ int main(int argc, char* argv[])
         std::cout << "Python wasnt initialized correctly. Don't use DINO!" << std::endl;
     }
 
+    featureIndexToString[DINO] = "DINO";
+    featureIndexToString[DEPTHMAGMA] = "Depth (Magma)";
+    featureIndexToString[LBP] = "Local Binary Pattern";
     // feature();
     // return 0;
 
@@ -759,10 +766,12 @@ int main(int argc, char* argv[])
             // render text
             if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText(i, "[Mouse RClick] to get features | [Mouse M.Bttn] to compare similarity", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                assert(text_rendered);
-                text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 0.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                assert(text_rendered);
+                int text_rendered = RenderText(i, "[Mouse RClick]: Get features | [Mouse M.Button]: Compare similarity", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[R]: Reset", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 750.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                // assert(text_rendered);
+                // assert(text_rendered);
 
                 glUseProgram(PHONGShaderPrograms[i]);
                 glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 

@@ -83,10 +83,11 @@ int LBP = 3;
 int DEPTHMAGMA = 1;
 int DINO = 2;
 
-
+std::map<int,std::string> featureIndexToString;
 
 int feature(int argc, char**argv, int option) {
-    
+
+
     if(option == DINO)
     {
         run_python("./external/src/dino.py");
