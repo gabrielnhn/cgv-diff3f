@@ -85,7 +85,13 @@ int DINO = 1;
 
 std::map<int,std::string> featureIndexToString;
 
-int feature(int argc, char**argv, int option) {
+int feature(int argc, char**argv, int option, bool conda_successful) {
+
+    if (not conda_successful)
+    {
+        std::cout << "noconda option used; ignoring command." << std::endl;
+        return 0;
+    }
 
 
     if(option == DINO)
@@ -93,6 +99,7 @@ int feature(int argc, char**argv, int option) {
         run_python("./external/src/dino.py");
         return 1;
     }
+    
     
     // Load the image
     cv::Mat image = cv::imread("temp/depth.png", cv::IMREAD_GRAYSCALE);

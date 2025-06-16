@@ -1,8 +1,6 @@
 # https://github.com/niladridutt/Diffusion-3D-Features/blob/main/diff3f.py
 # https://github.com/niladridutt/Diffusion-3D-Features/blob/main/test_correspondence.ipynb
 
-# import os
-# os.environ["LD_LIBRARY_PATH"] = os.environ.get("LD_LIBRARY_PATH", "") + ":$CONDA_PREFIX/lib"
 
 import torch
 import numpy as np

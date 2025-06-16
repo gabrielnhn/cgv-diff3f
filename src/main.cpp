@@ -410,23 +410,28 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     return 1;
 }
 
-bool can_use_python = true;
+bool conda_successful = true;
 
 int main(int argc, char* argv[])
 {
-    (void)argc;
-    (void)argv;
+    // (void)argc;
+    // (void)argv;
 
-    std::string myargs = *argv;
-    if (myargs.find("--nopython") != std::string::npos)
+    std::vector<std::string> args(argc);     
+    for (int i = 0; i < argc; ++i){
+        args[i] = argv[i];
+        // std::cout << "arg " << i << "is " << args[i] << std::endl;
+    }
+
+    if ((argc>1) and (args[1].find("--noconda") != std::string::npos))
     {
-        can_use_python = false;
-        std::cout << "NOT using Python. Don't use DINO!";
+        conda_successful = false;
+        std::cout << "NOT using conda features. Most features are disabled!" << std::endl;
     }
 
 
     // run_python(argc, argv, "./src/diffusion.py");
-    if ((can_use_python) and (not init_python(argc, argv)))
+    if ((conda_successful) and (not init_python(argc, argv)))
     {
         std::cout << "Python wasnt initialized correctly." << std::endl;
         return 1;
@@ -794,7 +799,7 @@ int main(int argc, char* argv[])
             if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
-                feature(argc, argv, currentFeatureComputer);
+                feature(argc, argv, currentFeatureComputer, conda_successful);
                 should_save_next_frame[i] = false;
                 unproject_image(
                     projections[i],
@@ -841,7 +846,8 @@ int main(int argc, char* argv[])
     // glDeleteShader(PHONGGeometryShaders[0]);
     
     textFinish();
-    finish_python();
+    if (conda_successful)
+        finish_python();
 
     return 0;
 }
