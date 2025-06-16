@@ -1,0 +1,17 @@
+name: diff3df
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - numpy
+  - pip
+  - tqdm
+  - pytorch-gpu
+  - torchvision
+  - opencv
+  - imageio
+  - ffmpeg
+  - pip:
+    - imageio[ffmpeg]
+    - polyscope

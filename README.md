@@ -25,3 +25,6 @@ cd external
 nuget install Axodox.MachineLearning
 
 libopencv-dev
+
+conda env create -f environment.yml
+conda activate diff3df
