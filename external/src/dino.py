@@ -104,10 +104,21 @@ def main():
     # Extract features
     features = get_dino_features(device, dino, image, grid)
 
-    print("Output features shape:", features.shape)  # [1, 768, H*W]
+    # print("Output features shape:", features.shape)  # [1, 768, H*W]
 
-    feat_vis = features[0, :3, :].reshape(3, height, width).cpu()
+    # get first 3 features
+    feat_vis = features[0, :3, :]
+    
+    # get 3 averages for 3 slices
+    # B, C, N = features.shape  # B=1, C=768, N=H*W
+    # slice_size = C // 3
+    # slice1 = features[:, :slice_size, :].mean(dim=1)
+    # slice2 = features[:, slice_size:2*slice_size, :].mean(dim=1)
+    # slice3 = features[:, 2*slice_size:, :].mean(dim=1)
+    # feat_vis = torch.cat([slice1, slice2, slice3], dim=0)
 
+
+    feat_vis = feat_vis.reshape(3, height, width).cpu()
     feat_img = T.ToPILImage()(feat_vis)
     feat_img.save("./temp/feature.png")
 

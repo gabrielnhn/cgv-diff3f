@@ -82,12 +82,9 @@ int feature(int argc, char**argv, int option) {
     
     if(option == 4)
     {
-        // run_python(argc, argv, "./external/src/dino.py");
         run_python("./external/src/dino.py");
         return 1;
     }
-    
-    
     
     // Load the image
     cv::Mat image = cv::imread("temp/depth.png", cv::IMREAD_GRAYSCALE);
@@ -97,7 +94,8 @@ int feature(int argc, char**argv, int option) {
     }
 
     if (option == 3)
-    return 0;
+        // depth magma
+        return 0;
     
     cv::Mat dst;
     if (option == 1)
@@ -106,14 +104,7 @@ int feature(int argc, char**argv, int option) {
         dst = lbp(image);
     
     
-    
     cv::imwrite("./temp/feature.png", dst);
-    // else if (option == 4)
-    //     dst = convolveWithCircularKernel(image);
-    // Show the LBP image
-    // cv::imshow("LBP Image", dst);
-    // cv::waitKey(0);
-
     return 1;
 }
 
