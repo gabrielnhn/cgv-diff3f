@@ -15,6 +15,7 @@ class OffModel {
 	std::vector<int> hits;
 	std::vector<glm::ivec3> faces;
 	glm::vec3 default_feature = glm::vec3(0.2);
+	int datasetIndex;
 
 
 	OffModel()
@@ -24,8 +25,9 @@ class OffModel {
 
 
 	// https://en.wikipedia.org/wiki/OFF_(file_format)
-	OffModel(std::string path)
+	OffModel(std::string path, int index)
 	{
+		datasetIndex = index;
 		std::string line;
 		std::ifstream myfile (path);
 		if (not myfile.is_open())

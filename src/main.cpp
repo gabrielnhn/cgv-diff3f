@@ -89,8 +89,92 @@ std::vector<unsigned int> EBOs = {0,0};
 std::vector<GLFWwindow*> windows = {NULL, NULL};  
 
 std::vector<int> last_mouse_events = {GLFW_RELEASE, GLFW_RELEASE};
+std::vector<int> last_keydir_events = {GLFW_RELEASE, GLFW_RELEASE};
 
 int currentFeatureComputer = 1;
+
+
+std::vector<OffModel> objects = {OffModel(), OffModel()};
+std::vector<float> diags = {0,0};
+const std::string pathTemplate = "./external/SHREC_r/off_2/";
+
+
+// load models
+int reload_models()
+{
+    for(unsigned long int i = 0; i < objects.size(); i++)
+    {
+        glfwMakeContextCurrent(windows[i]);
+
+        // off_object = OffModel(path);
+        // find model bounding box
+        glm::vec3 bbMin( std::numeric_limits<float>::max());
+        glm::vec3 bbMax(-std::numeric_limits<float>::max());
+        
+        for (auto &v: objects[i].vertices) {
+            bbMin = glm::min(bbMin, v);
+            bbMax = glm::max(bbMax, v);
+        }
+        
+        glm::vec3 center = (bbMin + bbMax) * 0.5f;
+        diags[i] = glm::length(bbMax - bbMin);
+        
+        // move and scale to fit bbox
+        models[i] = glm::mat4(1.0f);
+        models[i] = glm::translate(models[i], -center); 
+        models[i] = glm::scale(models[i], glm::vec3(2.0f / diags[i]));
+        
+        // prepare mvp matrices
+        projections[i] = glm::perspective(fov, aspect_ratios[i], nearDistance, farDistance);
+        views[i] = glm::lookAt(cameras[i], aim, glm::vec3(0, 1, 0));
+        mvps[i] = projections[i] * views[i] * models[i];
+        mvs[i] = views[i] * models[i];
+        
+        // set persistent shader uniforms
+        auto ambient_light = glm::vec3(0.3f, 0.3f, 0.3f);
+        
+        glUseProgram(DepthShaderPrograms[i]);
+        glUniform1f(glGetUniformLocation(DepthShaderPrograms[i], "farPlaneDistance"), farDistance);
+        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+        
+        glUseProgram(PHONGShaderPrograms[i]);
+        // glUniform1f(glGetUniformLocation(PHONGShaderProgram, "farPlaneDistance"), farDistance);
+        // glUniform3f(glGetUniformLocation(PHONGShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+        glUniform3f(glGetUniformLocation(PHONGShaderPrograms[i], "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
+        glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
+        
+        
+        // buffer model data to gpu
+        // glGenBuffers(1, &VBOPos[i]);
+        // glGenBuffers(1, &VBOColors[i]);
+        
+        // unsigned int VAO;
+        // unsigned int EBO;
+        glGenVertexArrays(1, &VAOs[i]);  
+        glBindVertexArray(VAOs[i]);
+        
+        glGenBuffers(1, &EBOs[i]);
+        
+        // VBOs FOR VERTICES
+        //pos
+        glBindBuffer(GL_ARRAY_BUFFER, VBOPos[i]);  
+        glBufferData(GL_ARRAY_BUFFER, objects[i].vertices.size()*sizeof(glm::vec3), &objects[i].vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+        glEnableVertexAttribArray(0);  
+        //color
+        glBindBuffer(GL_ARRAY_BUFFER, VBOColors[i]);  
+        glBufferData(GL_ARRAY_BUFFER, objects[i].features.size()*sizeof(glm::vec3), &objects[i].features[0], GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
+        glEnableVertexAttribArray(1);  
+        
+        
+        // EBO FOR FACES
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[i].faces.size()*sizeof(glm::ivec3), &objects[i].faces[0], GL_STATIC_DRAW); 
+    }
+    return 1;
+}
 
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
@@ -191,6 +275,36 @@ void processInput(GLFWwindow *window)
         cameras[1] = default_camera;
         should_reset[1] = true;
     }
+
+
+    int leftKey = glfwGetKey(window, GLFW_KEY_LEFT); 
+    int rightKey = glfwGetKey(window, GLFW_KEY_RIGHT); 
+
+    if ((not last_keydir_events[i]) and (leftKey or rightKey))
+    {
+        int index = objects[i].datasetIndex;
+        if (leftKey)
+            index -= 1;
+        else
+            index += 1;
+        
+        // 1 to 44
+        if(index < 1)
+            index = 44;
+        if(index > 44)
+            index = 1;
+
+        // std::string path = std::print(pathTemplate, index);
+        std::string path = pathTemplate + std::to_string(index) + ".off";
+
+        objects[i] = OffModel(path, index);
+        reload_models();
+        last_keydir_events[i] = GLFW_PRESS;
+    }
+    else if (not (leftKey or rightKey))
+        last_keydir_events[i] = GLFW_RELEASE;
+
+
     
     glfwGetCursorPos(window, &mousex, &mousey);
     // only if mouse within window
@@ -632,21 +746,23 @@ int main(int argc, char* argv[])
     }
     // load model data
 
-    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/1.off";
-    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/2.off";
-    // const std::string path = "/home/gabrielnhn/cgv/SHREC_r/off_2/3.off";
-    const std::string firstPath = "./external/SHREC_r/off_2/4.off";
-    const std::string otherPath = "./external/SHREC_r/off_2/5.off";
+    int dataset_size = 44;
+    // starts on 1.
+
+
+
+    const std::string firstPath = "./external/SHREC_r/off_2/1.off";
+    const std::string otherPath = "./external/SHREC_r/off_2/22.off";
     
     std::cout << "READING: " << firstPath << std::endl;
-    OffModel firstObject(firstPath);
+    OffModel firstObject(firstPath, 1);
     std::cout << "READING: " << otherPath << std::endl;
-    OffModel otherObject(otherPath);
+    OffModel otherObject(otherPath, 22);
     
-    std::vector<float> diags = {0,0};
     
 
-    std::vector<OffModel> objects = {firstObject, otherObject};
+    // std::vector<OffModel> objects = {firstObject, otherObject};
+    objects = {firstObject, otherObject};
 
     for(unsigned long int i = 0; i < objects.size(); i++)
     {
@@ -795,10 +911,11 @@ int main(int argc, char* argv[])
             }
             else if (not should_save_next_frame[i])
             {
-                int text_rendered = RenderText(i, "[Mouse RClick]: Get features | [Mouse M.Button]: Compare similarity", 25.0f, 25.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                text_rendered = RenderText(i, "[R]: Reset", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                int text_rendered = RenderText(i, "[Mouse RClick]: Get features | [Mouse M.Button]: Compare similarity", 25.0f, 20.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[R]: Reset           |               [Mouse LClick]: Hold to drag model", 25.0f, 50.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Press 1, 2, or 3 to change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 750.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "[KeybLeft <= or KeybRight =>]: Change dataset instance", 25.0f, 740.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+                text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 710.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 assert(text_rendered);
                 // assert(text_rendered);
 
