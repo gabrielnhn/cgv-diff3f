@@ -391,6 +391,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
         float projDepth = projected.z;
 
+        // ball query
+        
         // if (projDepth < depthBuf + diag*0.01)
         if (projDepth < depthBuf + diag*0.002)
         {

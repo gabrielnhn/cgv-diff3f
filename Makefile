@@ -1,17 +1,3 @@
-# MYINC= \
-# 	-I./external/include/ \
-# 	-I./include/ \
-# 	-I/usr/include/freetype2 \
-# 	-I$(CONDA_PREFIX)/include/python3.12 -L$(CONDA_PREFIX)/lib/
-	
-# # -I/usr/include/python3.10 
-
-# OPENCVPARAMS = $(shell pkg-config --cflags --libs opencv4)
-# MYLIBS = -fopenmp -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lstb -lfreetype \
-# 	-lpython3.12
-# # -lpython3.10
-
-
 MYINC = \
     -I./external/include/ \
     -I./include/ \

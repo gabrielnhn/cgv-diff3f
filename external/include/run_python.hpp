@@ -17,7 +17,6 @@ int init_python(int argc, char* argv[])
 
     if ((libpathcharp == NULL) or (std::string::npos == libpath.find("diff3df")))
     {
-        // std::cout << "BRO" << std::endl;
         std::cout << "please run `export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH` before the program starts" << std::endl;
         return 0;
     }
@@ -40,7 +39,6 @@ int init_python(int argc, char* argv[])
     {
         std::cout << "Please set up conda environment diff3df." << std::endl;
     }
-    
     
     if (conda_prefix && *conda_prefix)
         PyConfig_SetBytesString(&config, &config.home, conda_prefix);
