@@ -1,11 +1,5 @@
 # Diffusion 3D Features, Visualized
 
-Requirements (fill instructions later)
-Download dataset in (path)
-
-all libs in makefile!
-OpenGL (3?)
-
 ## Installation (apt-based Linux setup)
 
 Install g++ with C++23 support; (Comes by default in modern linux distros)
@@ -15,6 +9,9 @@ Install required packages GLFW, GLM, STB;
 sudo apt update
 sudo apt install libglfw3 libglfw3-dev libglm-dev libstb-dev libfreetype6-dev
 ```
+
+If GLAD fails (probably won't), download if from https://glad.dav1d.de/ using version 3.3 core, and replace `glad.c` and `glad.h` in `external/`
+
 
 Install conda/miniconda;
 Create and activate the environment.
