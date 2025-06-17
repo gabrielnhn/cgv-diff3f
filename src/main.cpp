@@ -391,8 +391,8 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 
         float projDepth = projected.z;
 
-        // if (projDepth < depthBuf + diag*0.002)
-        if (projDepth < depthBuf + diag*0.01)
+        // if (projDepth < depthBuf + diag*0.01)
+        if (projDepth < depthBuf + diag*0.002)
         {
             off_object->hits[k] += 1;
             float weight = 1.0f / off_object->hits[k];
