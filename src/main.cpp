@@ -9,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp> 
 #include <utility>
+#include <filesystem>
 
 #include "load_off_model.hpp"
 #include "load_shader.hpp"
@@ -96,7 +97,8 @@ int currentFeatureComputer = 1;
 
 std::vector<OffModel> objects = {OffModel(), OffModel()};
 std::vector<float> diags = {0,0};
-const std::string pathTemplate = "./external/SHREC_r/off_2/";
+const std::string dataset_path = "./external/SHREC_r/off_2/";
+int dataset_size;
 
 
 // load models
@@ -290,12 +292,12 @@ void processInput(GLFWwindow *window)
         
         // 1 to 44
         if(index < 1)
-            index = 44;
-        if(index > 44)
+            index = dataset_size;
+        if(index > dataset_size)
             index = 1;
 
-        // std::string path = std::print(pathTemplate, index);
-        std::string path = pathTemplate + std::to_string(index) + ".off";
+        // std::string path = std::print(dataset_path, index);
+        std::string path = dataset_path + std::to_string(index) + ".off";
 
         objects[i] = OffModel(path, index);
         reload_models();
@@ -745,14 +747,17 @@ int main(int argc, char* argv[])
         
     }
     // load model data
+    dataset_size = 0;
+    for (const auto & entry : std::filesystem::directory_iterator(dataset_path)) {
+        dataset_size += 1;
+    }
 
-    int dataset_size = 44;
-    // starts on 1.
+    std::cout << "DATASET SIZE IS " << dataset_size << " (original is 44)" << std::endl;
+    if (dataset_size < 1)
+        std::cout << "Dataset is empty. Download SHREC_r and put it in ./external/" << std::endl;
 
-
-
-    const std::string firstPath = "./external/SHREC_r/off_2/1.off";
-    const std::string otherPath = "./external/SHREC_r/off_2/22.off";
+    const std::string firstPath = dataset_path + std::to_string(1) + ".off";
+    const std::string otherPath = dataset_path + std::to_string((int)dataset_size/2) +".off";
     
     std::cout << "READING: " << firstPath << std::endl;
     OffModel firstObject(firstPath, 1);
