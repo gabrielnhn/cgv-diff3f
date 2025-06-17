@@ -31,33 +31,14 @@ float max_distance_to_object = 2.0;
 auto default_camera = glm::vec3(0.0f, 0.0f, max_distance_to_object);
 auto aim = glm::vec3(0.0f);
 auto nearDistance = 0.1f;
-// auto farDistance = 20.0f;
 auto farDistance = 5.0f;
 auto fov = glm::radians(60.0f);
 
 double mousex, mousey;
 double mousex_last, mousey_last;
-// int last_mouse_event = GLFW_RELEASE;
 float sensitivity = 10.0f;
 
 float speed = 0.05f;
-
-// for 1 window
-// glm::mat4 mvp;
-// glm::mat4 mv;
-
-// float aspect_ratio = width/height;
-
-// // image saving stuff
-// bool should_save_next_frame = false;
-// bool should_reset = false;
-
-// unsigned int DepthShaderProgram;
-// unsigned int PHONGShaderProgram;
-// unsigned int currentRenderProgram = 0;
-
-// unsigned int VBOPos, VBOColor;
-
 
 std::vector<glm::vec3>cameras = {default_camera, default_camera};
 std::vector<float> heights = {800, 800};
@@ -101,9 +82,10 @@ const std::string dataset_path = "./external/SHREC_r/off_2/";
 int dataset_size;
 
 
-// load models
+// reload models on command
 int reload_models()
 {
+    // for each window reload models into VBOs/VAOs
     for(unsigned long int i = 0; i < objects.size(); i++)
     {
         glfwMakeContextCurrent(windows[i]);
@@ -137,22 +119,11 @@ int reload_models()
         
         glUseProgram(DepthShaderPrograms[i]);
         glUniform1f(glGetUniformLocation(DepthShaderPrograms[i], "farPlaneDistance"), farDistance);
-        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
-        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
         
         glUseProgram(PHONGShaderPrograms[i]);
-        // glUniform1f(glGetUniformLocation(PHONGShaderProgram, "farPlaneDistance"), farDistance);
-        // glUniform3f(glGetUniformLocation(PHONGShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
         glUniform3f(glGetUniformLocation(PHONGShaderPrograms[i], "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
         glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
         
-        
-        // buffer model data to gpu
-        // glGenBuffers(1, &VBOPos[i]);
-        // glGenBuffers(1, &VBOColors[i]);
-        
-        // unsigned int VAO;
-        // unsigned int EBO;
         glGenVertexArrays(1, &VAOs[i]);  
         glBindVertexArray(VAOs[i]);
         
@@ -170,7 +141,6 @@ int reload_models()
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
         glEnableVertexAttribArray(1);  
         
-        
         // EBO FOR FACES
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[i].faces.size()*sizeof(glm::ivec3), &objects[i].faces[0], GL_STATIC_DRAW); 
@@ -186,7 +156,7 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     heights[i] = h;
     glfwMakeContextCurrent(window);
     glViewport(0, 0, w, h);
-    std::cout << "CHANGED WINDOW SIZE to w,h" << w << ", " << h << std::endl;
+    // std::cout << "CHANGED WINDOW SIZE to w,h" << w << ", " << h << std::endl;
     std::cout << aspect_ratios[i] << std::endl;
     aspect_ratios[i] = w/h;
     std::cout << aspect_ratios[i] << std::endl;
@@ -197,7 +167,7 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     int projectionLocation = glGetUniformLocation(textPrograms[i], "projection");
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(textProjection));
 
-     // prepare mvp matrices
+    // prepare mvp matrices
     // projections[i] = glm::perspective(fov, aspect_ratios[i], nearDistance, farDistance);
     // views[i] = glm::lookAt(cameras[i], aim, glm::vec3(0, 1, 0));
     // mvps[i] = projections[i] * views[i] * models[i];
@@ -205,15 +175,14 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     // glUseProgram(0);
 }  
 
+// update colors/features on the screen
 int updateModelVBO(OffModel* off_object, int windowIndex)
 {
     glfwMakeContextCurrent(windows[windowIndex]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOColors[windowIndex]);  
     glBufferData(GL_ARRAY_BUFFER, off_object->features.size()*sizeof(glm::vec3), &off_object->features[0], GL_DYNAMIC_DRAW);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
-    // glEnableVertexAttribArray(1); 
-    // PREPARE SHADERS
+    
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error in updateModelVBO()" << err << std::endl;
@@ -246,13 +215,7 @@ void processInput(GLFWwindow *window)
     glm::vec3 forward = glm::normalize(aim - cameras[i]);
     glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
     glm::vec3 up = glm::normalize(glm::cross(forward, glm::vec3(1, 0, 0)));
-    // up = glm::abs(up);
-
-    // auto forward = glm::vec3(0,0,1);
-    // auto right = glm::vec3(1,0,0);
-    // auto up = glm::vec3(0,1,0);
-
-
+    
     // keyboard
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         cameras[i] -= speed * up;
@@ -269,7 +232,6 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         cameras[i] -= speed * forward;
 
-    // if(glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
     {
         cameras[0] = default_camera;
@@ -277,7 +239,6 @@ void processInput(GLFWwindow *window)
         cameras[1] = default_camera;
         should_reset[1] = true;
     }
-
 
     int leftKey = glfwGetKey(window, GLFW_KEY_LEFT); 
     int rightKey = glfwGetKey(window, GLFW_KEY_RIGHT); 
@@ -296,7 +257,6 @@ void processInput(GLFWwindow *window)
         if(index > dataset_size)
             index = 1;
 
-        // std::string path = std::print(dataset_path, index);
         std::string path = dataset_path + std::to_string(index) + ".off";
 
         objects[i] = OffModel(path, index);
@@ -336,23 +296,13 @@ void processInput(GLFWwindow *window)
         should_compute_similarity[i] = false;
     }
 
-
-
     if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-    {
-        // currentRenderPrograms[i] = PHONGShaderPrograms[i];
         currentFeatureComputer = 1;
-    }
     if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-    {
-        // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 2;
-    }
     if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-    {
-        // currentRenderPrograms[i] = DepthShaderPrograms[i];
         currentFeatureComputer = 3;
-    }
+
     // if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
     // {
     //     // currentRenderPrograms[i] = DepthShaderPrograms[i];
@@ -409,9 +359,6 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     myImage depth_image(depth_image_path);
     myImage feature_image(feature_image_path);
 
-    // glfwGetCursorPos(window, &mousex, &mousey);
-    // float x_feat = mousex;
-    // float y_feat = mousey;
     glm::vec4 viewport(0, 0, widths[i], heights[i]);
     
     #pragma omp parallel for
@@ -420,27 +367,27 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float small_noise = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         small_noise = small_noise / 10.0;
 
-        glm::vec3 ndc = glm::project(off_object->vertices[k],
+        glm::vec3 projected = glm::project(off_object->vertices[k],
                                     current_mv,
                                     current_projection,
                                     viewport);
       
 
-        if (ndc.x < 0 || ndc.x >= depth_image.width || ndc.y < 0 || ndc.y >= depth_image.height) continue;
+        if (projected.x < 0 || projected.x >= depth_image.width || projected.y < 0 || projected.y >= depth_image.height) continue;
 
         glm::vec3 feature;
-        float depthBuf = depth_image.getValue(heights[i] - ndc.y,ndc.x).r;
+        float depthBuf = depth_image.getValue(heights[i] - projected.y,projected.x).r;
         
         if (currentFeatureComputer == DEPTHMAGMA)
-            feature = depth_image.toMagma(heights[i] - ndc.y, ndc.x);
+            feature = depth_image.toMagma(heights[i] - projected.y, projected.x);
         
         else
         {
-            feature = feature_image.getValue(heights[i] - ndc.y, ndc.x);
+            feature = feature_image.getValue(heights[i] - projected.y, projected.x);
         }
         
 
-        float projDepth = ndc.z;
+        float projDepth = projected.z;
 
         // if (projDepth < depthBuf + diag*0.002)
         if (projDepth < depthBuf + diag*0.01)
@@ -450,7 +397,6 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
             auto prev_value = off_object->features[k] * (1.0f - weight);
             // auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
             auto new_value = feature * weight;
-            
             
             off_object->features[k] = prev_value + new_value;
         }
@@ -462,14 +408,12 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
 }
 
 int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
-    // std::string feature_image_path,
     std::string depth_image_path,
     GLFWwindow* window,
     OffModel* off_object, float diag)
 {
     (void)diag;
     float ZFACTOR = 5.0;
-    // float ZFACTOR = 0.1;
 
     int i = windowToIndex[window];
     myImage depth_image(depth_image_path);
@@ -487,8 +431,6 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     float minDist = 99999.0f;
     glm::vec3 minNdc;
  
-    // std::cout << "LOOKING FOR POINT " << std::endl;
-    // #pragma omp parallel for reduction (min: minDist)
     for (unsigned long int k = 0; k < off_object->vertices.size(); k++)
     {
 
@@ -499,10 +441,6 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
  
         ndc.z = ndc.z * ZFACTOR;
         float dist = glm::distance(ndc, target);
-        // std::cout << "dist " << dist << std::endl;
-        // std::cout << "depthBuf " << depthBuf << std::endl;
-        // std::cout << "ndc.z " << ndc.z << std::endl;
-        // if ((dist < minDist) and (ndc.z <= target.z + diag*0.005))
         if ((dist < minDist))
         {
             minDist = dist;
@@ -518,18 +456,16 @@ int similarity_setup(glm::mat4 current_projection, glm::mat4 current_mv,
     glUniform1i(glGetUniformLocation(PHONGShaderPrograms[1-i], "shouldComputeSimilarity"), 1); 
     glUniform3f(glGetUniformLocation(PHONGShaderPrograms[1-i], "referenceValue"), off_object->features[minIndex].x, off_object->features[minIndex].y, off_object->features[minIndex].z); 
     
-    
     // set origin vertex as ref in depth shader for i
     glfwMakeContextCurrent(indexToWindow[i]);
     glUseProgram(DepthShaderPrograms[i]);
     glUniform1i(glGetUniformLocation(DepthShaderPrograms[i], "shouldComputeSimilarity"), 1); 
     glUniform3f(glGetUniformLocation(DepthShaderPrograms[i], "comparedPoint"), minNdc.x, minNdc.y, minNdc.z); 
 
-
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error after sim setup: " << err << std::endl;
-        exit(-1);
+        return 0;
     }
 
     return 1;
@@ -539,13 +475,9 @@ bool conda_successful = true;
 
 int main(int argc, char* argv[])
 {
-    // (void)argc;
-    // (void)argv;
-
     std::vector<std::string> args(argc);     
     for (int i = 0; i < argc; ++i){
         args[i] = argv[i];
-        // std::cout << "arg " << i << "is " << args[i] << std::endl;
     }
 
     if ((argc>1) and (args[1].find("--noconda") != std::string::npos))
@@ -554,8 +486,6 @@ int main(int argc, char* argv[])
         std::cout << "NOT using conda features. Most features are disabled!" << std::endl;
     }
 
-
-    // run_python(argc, argv, "./src/diffusion.py");
     if ((conda_successful) and (not init_python(argc, argv)))
     {
         std::cout << "Python wasnt initialized correctly." << std::endl;
@@ -565,12 +495,10 @@ int main(int argc, char* argv[])
     featureIndexToString[DINO] = "DINO";
     featureIndexToString[DEPTHMAGMA] = "Depth (Magma)";
     featureIndexToString[LBP] = "Local Binary Pattern";
-    // feature();
-    // return 0;
 
     GLenum err;
 
-    // PREPARE WINDOW
+    // 1st window
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -580,7 +508,7 @@ int main(int argc, char* argv[])
     GLFWwindow* windowFirst = glfwCreateWindow(widths[0], heights[0], "Diff3F Window 1", NULL, NULL);
     if (windowFirst == NULL)
     {
-        std::cout << "Failed to create GLFW window..." << std::endl;
+        std::cout << "Failed to create GLFW window. Install libglfw3 abd libglfw3-dev." << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -589,11 +517,9 @@ int main(int argc, char* argv[])
     windowToIndex[windowFirst] = 0;
     indexToWindow[0] = windowFirst;
 
-
-
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "Failed to initialize GLAD.  Check https://learnopengl.com/Getting-started/Creating-a-window on Setting up GLAD." << std::endl;
         return -1;
     }   
 
@@ -604,7 +530,6 @@ int main(int argc, char* argv[])
     aspect_ratios[0] = widths[0]/heights[0];
 
     
-    // GLFWwindow* windowOther = glfwCreateWindow(widths[1], heights[1], "Diff3F Window 2", NULL, NULL);
     GLFWwindow* windowOther = glfwCreateWindow(widths[1], heights[1], "Diff3F Window 2", NULL, windowFirst);
     if (windowOther == NULL)
     {
@@ -618,8 +543,6 @@ int main(int argc, char* argv[])
     windowToIndex[windowOther] = 1;
 
     windows = {windowFirst, windowOther};  
-
-    
 
     // PREPARE SHADERS (2 shader programs per window = 4)
     for(unsigned long int i = 0; i < windows.size(); i++)
@@ -721,7 +644,7 @@ int main(int argc, char* argv[])
         glUseProgram(PHONGShaderPrograms[i]);
         glEnable(GL_PROGRAM_POINT_SIZE);
 
-        // prepare viridis
+        // prepare colormap
         // Generate texture
         GLuint colorMapTex;
         glGenTextures(1, &colorMapTex);
@@ -746,6 +669,7 @@ int main(int argc, char* argv[])
         currentRenderPrograms[i] = PHONGShaderPrograms[i];
         
     }
+
     // load model data
     dataset_size = 0;
     for (const auto & entry : std::filesystem::directory_iterator(dataset_path)) {
@@ -754,7 +678,10 @@ int main(int argc, char* argv[])
 
     std::cout << "DATASET SIZE IS " << dataset_size << " (original is 44)" << std::endl;
     if (dataset_size < 1)
+    {
         std::cout << "Dataset is empty. Download SHREC_r and put it in ./external/" << std::endl;
+        return -1;
+    }
 
     const std::string firstPath = dataset_path + std::to_string(1) + ".off";
     const std::string otherPath = dataset_path + std::to_string((int)dataset_size/2) +".off";
@@ -764,17 +691,12 @@ int main(int argc, char* argv[])
     std::cout << "READING: " << otherPath << std::endl;
     OffModel otherObject(otherPath, 22);
     
-    
-
-    // std::vector<OffModel> objects = {firstObject, otherObject};
     objects = {firstObject, otherObject};
 
     for(unsigned long int i = 0; i < objects.size(); i++)
     {
         glfwMakeContextCurrent(windows[i]);
 
-        // off_object = OffModel(path);
-        // find model bounding box
         glm::vec3 bbMin( std::numeric_limits<float>::max());
         glm::vec3 bbMax(-std::numeric_limits<float>::max());
         
@@ -802,12 +724,8 @@ int main(int argc, char* argv[])
         
         glUseProgram(DepthShaderPrograms[i]);
         glUniform1f(glGetUniformLocation(DepthShaderPrograms[i], "farPlaneDistance"), farDistance);
-        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
-        // glUniform3f(glGetUniformLocation(DepthShaderProgram, "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
-        
         glUseProgram(PHONGShaderPrograms[i]);
-        // glUniform1f(glGetUniformLocation(PHONGShaderProgram, "farPlaneDistance"), farDistance);
-        // glUniform3f(glGetUniformLocation(PHONGShaderProgram, "object_color"), 1.0f, 0.5f, 0.5f); 
+
         glUniform3f(glGetUniformLocation(PHONGShaderPrograms[i], "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
         glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
         
@@ -842,8 +760,6 @@ int main(int argc, char* argv[])
         
         glEnable(GL_DEPTH_TEST);
         
-        // glClearColor(1.0f,1.0f,1.0f,1.0f);
-        // glClearColor(ambient_light.x, ambient_light.y, ambient_light.z,1.0f);
         glClearColor(0.0f,0.0f,0.0f,0.0f);
         
         
@@ -861,9 +777,6 @@ int main(int argc, char* argv[])
             GLFWwindow* window = windows[i];
             glfwMakeContextCurrent(window);
 
-           
-        // while(!glfwWindowShouldClose(window))
-        // {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             processInput(window); // recompute camera position
             
@@ -901,7 +814,6 @@ int main(int argc, char* argv[])
             
             // FOR SURFACES
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
-            // glDrawElements(GL_TRIANGLES, firstObject.faces.size()*3, GL_UNSIGNED_INT, 0);
             glDrawElements(GL_TRIANGLES, objects[i].faces.size()*3, GL_UNSIGNED_INT, 0);
             
             while ((err = glGetError()) != GL_NO_ERROR) {
@@ -921,7 +833,6 @@ int main(int argc, char* argv[])
                 text_rendered = RenderText(i, "[1, 2, 3]: Change feature computing method", 25.0f, 770.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "[KeybLeft <= or KeybRight =>]: Previous/Next model (" + std::to_string(objects[i].datasetIndex) + ")", 25.0f, 740.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 710.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-                assert(text_rendered);
                 // assert(text_rendered);
 
                 glUseProgram(PHONGShaderPrograms[i]);
@@ -950,11 +861,9 @@ int main(int argc, char* argv[])
             
             if (should_compute_similarity[i])
             {
-                // should_compute_similarity[i] = 0;
                 similarity_setup(
                     projections[i],
                     mvs[i],
-                    // "",
                     "./temp/depth.png",
                     window,
                     &objects[i], diags[i]
@@ -971,18 +880,10 @@ int main(int argc, char* argv[])
             
         }
     }
-        
-    // glDeleteShader(DepthVertexShaders);
-    // glDeleteShader(DepthFragShaders); 
-    // glDeleteProgram(DepthShaderPrograms[0]); 
-    // glDeleteShader(PHONGVertexShaders[0]);
-    // glDeleteShader(PHONGFragShaders[0]); 
-    // glDeleteProgram(PHONGShaderPrograms[0]);
-    // glDeleteShader(PHONGGeometryShaders[0]);
-    
-    textFinish();
-    if (conda_successful)
-        finish_python();
+
+    // textFinish();
+    // if (conda_successful)
+    //     finish_python();
 
     return 0;
 }
