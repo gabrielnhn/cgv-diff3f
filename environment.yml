@@ -9,9 +9,9 @@ dependencies:
   - tqdm
   - pytorch-gpu
   - torchvision
-  - opencv
   - imageio
   - ffmpeg
+  # - opencv
   - pip:
     - imageio[ffmpeg]
     - polyscope

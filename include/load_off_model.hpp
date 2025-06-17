@@ -40,7 +40,8 @@ class OffModel {
 		std::getline(myfile,line);
 		if (line.find("OFF") == std::string::npos)
 		{
-			std::cout << "File " << path << "is not an OFF model" << std::endl; 
+			std::cout << "File " << path << "is not an OFF model" << std::endl;
+			index = -1;
 			return;
 		}
 
@@ -52,10 +53,6 @@ class OffModel {
 		std::cout << "Loading " << n_vertices << " and " <<n_faces << " faces" << std::endl; 
 		if (zero != 0)
 			std::cout << "Warning: n_edges is not zero" << std::endl;
-
-
-		// vertices.reserve(n_vertices);
-		// faces.reserve(n_faces);
 
 		// all vertices
 		float x,y,z;
@@ -96,8 +93,8 @@ class OffModel {
 			max = glm::max(max, vertices[index]);
 		}
 		
-		std::cout << "Max vertex is " << max.x << " " << max.y << " " << max.z << " " << std::endl;
-		std::cout << "Min vertex is " << min.x << " " << min.y << " " << min.z << " " << std::endl;
+		// std::cout << "Max vertex is " << max.x << " " << max.y << " " << max.z << " " << std::endl;
+		// std::cout << "Min vertex is " << min.x << " " << min.y << " " << min.z << " " << std::endl;
 
 
 		myfile.close();

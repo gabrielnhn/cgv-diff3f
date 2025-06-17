@@ -392,7 +392,7 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         float projDepth = projected.z;
 
         // ball query
-        
+
         // if (projDepth < depthBuf + diag*0.01)
         if (projDepth < depthBuf + diag*0.002)
         {
@@ -677,6 +677,7 @@ int main(int argc, char* argv[])
     // load model data
     dataset_size = 0;
     for (const auto & entry : std::filesystem::directory_iterator(dataset_path)) {
+        (void)entry;
         dataset_size += 1;
     }
 
@@ -698,7 +699,7 @@ int main(int argc, char* argv[])
     objects = {firstObject, otherObject};
 
     // for each i
-    for (int i = 0; i < objects.size(); i++)
+    for (long unsigned int i = 0; i < objects.size(); i++)
     {
         glfwMakeContextCurrent(windows[i]);
         glGenBuffers(1, &VBOPos[i]);
@@ -780,6 +781,7 @@ int main(int argc, char* argv[])
                 text_rendered = RenderText(i, "[KeybLeft <= or KeybRight =>]: Previous/Next model (" + std::to_string(objects[i].datasetIndex) + ")", 25.0f, 740.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 text_rendered = RenderText(i, "Current method: " + featureIndexToString[currentFeatureComputer], 25.0f, 710.0f, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
                 // assert(text_rendered);
+                (void)text_rendered;
 
                 glUseProgram(PHONGShaderPrograms[i]);
                 glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
@@ -791,7 +793,8 @@ int main(int argc, char* argv[])
             if (should_save_next_frame[i])
             {
                 saveImage("./temp/depth.png", window, true);
-                feature(argc, argv, currentFeatureComputer, conda_successful);
+                // feature(argc, argv, currentFeatureComputer, conda_successful);
+                feature(currentFeatureComputer, conda_successful);
                 should_save_next_frame[i] = false;
                 unproject_image(
                     projections[i],

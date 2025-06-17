@@ -10,7 +10,8 @@ int RANDOM_COLOR = 3;
 
 std::map<int,std::string> featureIndexToString;
 
-int feature(int argc, char**argv, int option, bool conda_successful) {
+// int feature(int argc, char**argv, int option, bool conda_successful) {
+int feature(int option, bool conda_successful) {
 
     if (not conda_successful)
     {
