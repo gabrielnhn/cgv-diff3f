@@ -1,31 +1,37 @@
-# Experiments on Diff3f
+# Diffusion 3D Features, Visualized
 
 Requirements (fill instructions later)
 Download dataset in (path)
 
 all libs in makefile!
 OpenGL (3?)
-GLAD framework (supposedly on external/)
-GLM
-g++, C++23
-OpenMP
-libstb
-libfreetype6-dev
-libpython3.10
 
-sudo apt-get install xtensor-dev
+## Installation (apt-based Linux setup)
 
-# https://huggingface.co/lllyasviel/ControlNet/resolve/main/models/control_sd15_depth.pth?download=true
-conda env create -f environment.yaml
-conda activate control
+Install g++ with C++23 support; (Comes by default in modern linux distros)
+Install required packages GLFW, GLM, STB;
 
-#sudo apt install mono-devel
-https://learn.microsoft.com/en-us/nuget/install-nuget-client-tools?tabs=macos#cli-tools
-cd external
-nuget install Axodox.MachineLearning
+```bash
+sudo apt update
+sudo apt install libglfw3 libglfw3-dev libglm-dev libstb-dev libfreetype6-dev
+```
 
-libopencv-dev
-
+Install conda/miniconda;
+Create and activate the environment.
+```bash
 conda env create -f environment.yml
 conda activate diff3df
+```
+
+Compile the program;
+
+```bash
+make
+```
+
+Run the program:
+
+```bash
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+./DIFF3DF_VISUALIZED
+```
