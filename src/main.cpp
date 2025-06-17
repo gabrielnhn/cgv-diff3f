@@ -351,9 +351,11 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
     OffModel* off_object, float diag)
 {
     int i = windowToIndex[window];
-    // float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-    // float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-    // float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float random_float1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float random_float2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float random_float3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    glm::vec3 random_color = glm::vec3(random_float1, random_float2, random_float3);
+
 
     myImage depth_image(depth_image_path);
     myImage feature_image(feature_image_path);
@@ -380,10 +382,11 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
         if (currentFeatureComputer == DEPTHMAGMA)
             feature = depth_image.toMagma(heights[i] - projected.y, projected.x);
         
+        else if (currentFeatureComputer == RANDOM_COLOR) 
+            feature = random_color;
+
         else
-        {
             feature = feature_image.getValue(heights[i] - projected.y, projected.x);
-        }
         
 
         float projDepth = projected.z;
@@ -394,7 +397,6 @@ int unproject_image(glm::mat4 current_projection, glm::mat4 current_mv,
             off_object->hits[k] += 1;
             float weight = 1.0f / off_object->hits[k];
             auto prev_value = off_object->features[k] * (1.0f - weight);
-            // auto new_value = glm::vec3(random_float1+small_noise, random_float2+small_noise, random_float3+small_noise) * weight;
             auto new_value = feature * weight;
             
             off_object->features[k] = prev_value + new_value;
@@ -493,7 +495,8 @@ int main(int argc, char* argv[])
 
     featureIndexToString[DINO] = "DINO";
     featureIndexToString[DEPTHMAGMA] = "Depth (Magma)";
-    featureIndexToString[LBP] = "Local Binary Pattern";
+    // featureIndexToString[LBP] = "Local Binary Pattern";
+    featureIndexToString[RANDOM_COLOR] = "Random Color";
 
     GLenum err;
 
@@ -702,6 +705,7 @@ int main(int argc, char* argv[])
         glGenBuffers(1, &EBOs[i]);
         textSetup(i);
         glEnable(GL_DEPTH_TEST);
+        glClearColor(0.0f,0.0f,0.0f,0.0f);
     }
 
     reload_models();
@@ -709,7 +713,6 @@ int main(int argc, char* argv[])
     int loop_count = 0;   
 
 
-    glClearColor(0.0f,0.0f,0.0f,0.0f);
     // while(true)
     while((not glfwWindowShouldClose(windowFirst)) and (not glfwWindowShouldClose(windowOther)))
     {
@@ -821,10 +824,5 @@ int main(int argc, char* argv[])
             
         }
     }
-
-    // textFinish();
-    // if (conda_successful)
-    //     finish_python();
-
     return 0;
 }
