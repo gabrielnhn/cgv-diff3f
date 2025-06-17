@@ -90,7 +90,6 @@ int reload_models()
     {
         glfwMakeContextCurrent(windows[i]);
 
-        // off_object = OffModel(path);
         // find model bounding box
         glm::vec3 bbMin( std::numeric_limits<float>::max());
         glm::vec3 bbMax(-std::numeric_limits<float>::max());
@@ -693,82 +692,24 @@ int main(int argc, char* argv[])
     
     objects = {firstObject, otherObject};
 
-    for(unsigned long int i = 0; i < objects.size(); i++)
+    // for each i
+    for (int i = 0; i < objects.size(); i++)
     {
         glfwMakeContextCurrent(windows[i]);
-
-        glm::vec3 bbMin( std::numeric_limits<float>::max());
-        glm::vec3 bbMax(-std::numeric_limits<float>::max());
-        
-        for (auto &v: objects[i].vertices) {
-            bbMin = glm::min(bbMin, v);
-            bbMax = glm::max(bbMax, v);
-        }
-        
-        glm::vec3 center = (bbMin + bbMax) * 0.5f;
-        diags[i] = glm::length(bbMax - bbMin);
-        
-        // move and scale to fit bbox
-        models[i] = glm::mat4(1.0f);
-        models[i] = glm::translate(models[i], -center); 
-        models[i] = glm::scale(models[i], glm::vec3(2.0f / diags[i]));
-        
-        // prepare mvp matrices
-        projections[i] = glm::perspective(fov, aspect_ratios[i], nearDistance, farDistance);
-        views[i] = glm::lookAt(cameras[i], aim, glm::vec3(0, 1, 0));
-        mvps[i] = projections[i] * views[i] * models[i];
-        mvs[i] = views[i] * models[i];
-        
-        // set persistent shader uniforms
-        auto ambient_light = glm::vec3(0.3f, 0.3f, 0.3f);
-        
-        glUseProgram(DepthShaderPrograms[i]);
-        glUniform1f(glGetUniformLocation(DepthShaderPrograms[i], "farPlaneDistance"), farDistance);
-        glUseProgram(PHONGShaderPrograms[i]);
-
-        glUniform3f(glGetUniformLocation(PHONGShaderPrograms[i], "ambient_light"), ambient_light.x,ambient_light.y,ambient_light.z); 
-        glUniform1i(glGetUniformLocation(PHONGShaderPrograms[i], "shouldComputeSimilarity"), 0); 
-        
-        
-        // buffer model data to gpu
         glGenBuffers(1, &VBOPos[i]);
         glGenBuffers(1, &VBOColors[i]);
-        
-        // unsigned int VAO;
-        // unsigned int EBO;
         glGenVertexArrays(1, &VAOs[i]);  
-        glBindVertexArray(VAOs[i]);
-        
         glGenBuffers(1, &EBOs[i]);
-        
-        // VBOs FOR VERTICES
-        //pos
-        glBindBuffer(GL_ARRAY_BUFFER, VBOPos[i]);  
-        glBufferData(GL_ARRAY_BUFFER, objects[i].vertices.size()*sizeof(glm::vec3), &objects[i].vertices[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
-        glEnableVertexAttribArray(0);  
-        //color
-        glBindBuffer(GL_ARRAY_BUFFER, VBOColors[i]);  
-        glBufferData(GL_ARRAY_BUFFER, objects[i].features.size()*sizeof(glm::vec3), &objects[i].features[0], GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0);
-        glEnableVertexAttribArray(1);  
-        
-        
-        // EBO FOR FACES
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, objects[i].faces.size()*sizeof(glm::ivec3), &objects[i].faces[0], GL_STATIC_DRAW); 
-        
+        textSetup(i);
         glEnable(GL_DEPTH_TEST);
-        
-        glClearColor(0.0f,0.0f,0.0f,0.0f);
-        
-        
-        int text_loaded = textSetup(i);
-        assert(text_loaded);
     }
+
+    reload_models();
 
     int loop_count = 0;   
 
+
+    glClearColor(0.0f,0.0f,0.0f,0.0f);
     // while(true)
     while((not glfwWindowShouldClose(windowFirst)) and (not glfwWindowShouldClose(windowOther)))
     {
